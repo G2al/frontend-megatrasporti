@@ -28,7 +28,13 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-center" richColors closeButton />
+      <Toaster
+        position="top-center"
+        richColors
+        closeButton
+        offset={{ top: "max(1.25rem, calc(env(safe-area-inset-top) + 0.75rem))" }}
+        mobileOffset={{ top: "max(1.25rem, calc(env(safe-area-inset-top) + 0.75rem))" }}
+      />
     </QueryClientProvider>
   );
 }
