@@ -19,9 +19,9 @@ export function RecordSheet({ open, onOpenChange, title, description, children }
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="gap-0 p-0 data-[side=bottom]:top-0 data-[side=bottom]:h-dvh data-[side=bottom]:border-t-0 sm:data-[side=bottom]:top-6 sm:data-[side=bottom]:right-auto sm:data-[side=bottom]:left-1/2 sm:data-[side=bottom]:h-auto sm:data-[side=bottom]:max-h-[calc(100dvh-3rem)] sm:data-[side=bottom]:w-full sm:data-[side=bottom]:max-w-[600px] sm:data-[side=bottom]:-translate-x-1/2 sm:data-[side=bottom]:rounded-xl"
+        className="top-[max(1.5rem,env(safe-area-inset-top))] right-auto bottom-auto left-1/2 h-auto max-h-[calc(100dvh-max(3rem,calc(env(safe-area-inset-top)+env(safe-area-inset-bottom)+2rem)))] w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 gap-0 rounded-xl border p-0 data-[side=bottom]:data-ending-style:translate-y-[1rem] data-[side=bottom]:data-starting-style:translate-y-[1rem]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b px-4 pt-4 pb-3">
           <div className="min-w-0">
             <SheetTitle className="text-lg font-semibold">{title}</SheetTitle>
             <SheetDescription>{description}</SheetDescription>
@@ -32,7 +32,7 @@ export function RecordSheet({ open, onOpenChange, title, description, children }
             <X />
           </SheetClose>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-6">
           {children}
         </div>
       </SheetContent>

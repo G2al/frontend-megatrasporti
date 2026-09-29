@@ -129,10 +129,12 @@
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    touch-action: pan-x pan-y;
   }
   body {
     min-height: 100dvh;
     overscroll-behavior-y: none;
+    touch-action: pan-x pan-y;
   }
   button, [role="button"], a {
     touch-action: manipulation;
