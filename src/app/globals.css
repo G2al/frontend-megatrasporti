@@ -139,6 +139,10 @@
   button, [role="button"], a {
     touch-action: manipulation;
   }
+  input {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 .scrollbar-none {
