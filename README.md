@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mega Trasporti — Frontend
 
-## Getting Started
+Web app mobile-first e installabile (PWA) in Next.js 16 + React 19 che usa le API REST Laravel (Sanctum, token Bearer) del backend esistente.
 
-First, run the development server:
+## Avvio
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev            # se Turbopack/SWC è bloccato: npm run dev -- --webpack
+npm run build && npm start
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Il backend Laravel deve essere raggiungibile all'indirizzo di `NEXT_PUBLIC_API_BASE_URL` e accettare l'origine del frontend (CORS).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variabili d'ambiente (`.env.local`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variabile | Esempio | Uso |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://127.0.0.1:8000/api` | Base delle API |
+| `NEXT_PUBLIC_BRAND_NAME` | `Mega Trasporti` | Nome del brand |
+| `NEXT_PUBLIC_BRAND_PRIMARY` | `#1A2A9C` | Colore primario (tema, manifest, theme-color) |
 
-## Learn More
+## Struttura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/app/(auth)      login, registrati (pubbliche)
+src/app/(app)       rifornimenti, manutenzioni, documenti, viaggi (protette)
+src/app/manifest.ts manifest PWA
+src/components      layout/, shared/, movements/, maintenances/, trips/, documents/, ui/ (shadcn)
+src/config/brand.ts nome, colore e percorsi degli asset
+src/lib             api.ts (fetch tipizzato), auth.ts, format.ts, image.ts (compressione), form.ts, search.ts
+src/hooks           use-auth, use-data (TanStack Query), use-last-vehicle
+public/sw.js        service worker minimo (nessuna cache dei dati)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Sostituire i loghi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Copia i file in `public/brand/` mantenendo i nomi (se mancano, l'app mostra il nome testuale):
 
-## Deploy on Vercel
+- `logo.png` — logo a colori (login e registrazione)
+- `logo-white.png` — logo bianco (header blu)
+- `pwa-192.png`, `pwa-512.png` — icone PWA (anche maskable)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+L'icona `public/favicon.ico` è quella del sito. I percorsi sono centralizzati in `src/config/brand.ts`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Note
+
+- Token in `localStorage` (`mega_token`, `mega_user`), oppure in `sessionStorage` se "Ricordami" è disattivo.
+- Il service worker si registra solo in produzione (`npm run build && npm start`).
+- Foto e immagini vengono ridimensionate (max 1600px) e ricompresse in JPEG prima dell'upload; PDF e altri file non vengono modificati. Limite 16 MB.
