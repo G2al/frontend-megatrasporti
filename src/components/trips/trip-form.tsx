@@ -182,7 +182,7 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
               aria-label={`Destinazione ${index + 1}`}
               placeholder={`Destinazione ${index + 1}`}
               maxLength={255}
-              className="h-11"
+              className="flex h-11 items-center py-0 leading-normal"
               disabled={pending}
               aria-invalid={Boolean(errors.destinations?.[index]?.value)}
               {...register(`destinations.${index}.value`)}
