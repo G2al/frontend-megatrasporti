@@ -20,12 +20,20 @@ export interface Vehicle {
   refuel_km_per_liter_avg: number | null;
 }
 
+export interface StationCard {
+  id: number;
+  number: string;
+  label: string | null;
+}
+
 export interface Station {
   id: number;
   name: string;
   address: string | null;
   credit_balance: number | string | null;
   uses_vouchers: boolean;
+  uses_credit_cards: boolean;
+  cards: StationCard[];
 }
 
 export interface Supplier {
@@ -55,6 +63,7 @@ export interface Movement {
   adblue: number | string | null;
   notes: string | null;
   is_voucher: boolean;
+  station_card_id: number | null;
   km_per_liter: number | string | null;
   photo_url: string | null;
   station: Station | null;

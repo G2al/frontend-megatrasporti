@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { ConsumptionBadge } from "@/components/movements/consumption-badge";
 import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
 import { SearchableSelect } from "@/components/shared/searchable-select";
+import type { SelectOption } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { SwitchRow } from "@/components/shared/switch-row";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
@@ -41,6 +42,7 @@ const schema = z
     liters: decimal("Litri"),
     price: decimal("Prezzo"),
     is_voucher: z.boolean(),
+    station_card_id: z.string(),
     adblue: z
       .string()
       .trim()
@@ -58,6 +60,10 @@ const schema = z
       context.addIssue({ code: "custom", path: ["price"], message: "Il prezzo deve essere maggiore dei litri." });
     }
   });
+
+function cardLabel(card: { number: string; label: string | null }): string {
+  return card.label ? `${card.number} — ${card.label}` : card.number;
+}
 
 type MovementValues = z.infer<typeof schema>;
 
@@ -93,6 +99,7 @@ export function MovementForm({ vehicles, stations, onSaved }: MovementFormProps)
       liters: "",
       price: "",
       is_voucher: false,
+      station_card_id: "",
       adblue: "",
       notes: "",
       photo: undefined,
@@ -114,9 +121,19 @@ export function MovementForm({ vehicles, stations, onSaved }: MovementFormProps)
 
   const station = stations.find((item) => String(item.id) === stationId);
 
+  const previousStationId = useRef(stationId);
   useEffect(() => {
-    if (!station?.uses_vouchers) setValue("is_voucher", false);
-  }, [station, setValue]);
+    if (previousStationId.current !== stationId) {
+      setValue("is_voucher", false);
+      setValue("station_card_id", "");
+      previousStationId.current = stationId;
+    }
+  }, [stationId, setValue]);
+
+  const cardOptions = useMemo<SelectOption[]>(
+    () => (station?.cards ?? []).map((card) => ({ value: String(card.id), label: cardLabel(card) })),
+    [station],
+  );
 
   const ticketAverage = useMemo(() => {
     const start = Number(kmStart);
@@ -145,6 +162,14 @@ export function MovementForm({ vehicles, stations, onSaved }: MovementFormProps)
   });
 
   async function onSubmit(values: MovementValues) {
+    if (station?.uses_credit_cards && values.station_card_id === "") {
+      setError("station_card_id", {
+        type: "manual",
+        message: "Seleziona la carta di credito usata per questo rifornimento.",
+      });
+      return;
+    }
+
     const data = new FormData();
     data.append("station_id", values.station_id);
     data.append("vehicle_id", values.vehicle_id);
@@ -154,6 +179,9 @@ export function MovementForm({ vehicles, stations, onSaved }: MovementFormProps)
     data.append("liters", String(parseDecimal(values.liters)));
     data.append("price", String(parseDecimal(values.price)));
     if (station?.uses_vouchers) data.append("is_voucher", values.is_voucher ? "1" : "0");
+    if (station?.uses_credit_cards && values.station_card_id !== "") {
+      data.append("station_card_id", values.station_card_id);
+    }
     if (values.adblue.trim() !== "") data.append("adblue", String(parseDecimal(values.adblue)));
     appendOptional(data, "notes", values.notes);
     if (values.photo) data.append("photo", values.photo);
@@ -214,6 +242,28 @@ export function MovementForm({ vehicles, stations, onSaved }: MovementFormProps)
             <SwitchRow id="is_voucher" label="Pagamento con buono" checked={field.value} onChange={field.onChange} />
           )}
         />
+      )}
+
+      {station?.uses_credit_cards && (
+        <Field id="station_card_id" label="Carta di credito" error={errors.station_card_id?.message}>
+          <Controller
+            control={control}
+            name="station_card_id"
+            render={({ field }) => (
+              <SearchableSelect
+                id="station_card_id"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                options={cardOptions}
+                placeholder="Seleziona carta"
+                searchable={false}
+                invalid={Boolean(errors.station_card_id)}
+                disabled={pending}
+              />
+            )}
+          />
+        </Field>
       )}
 
       <Field id="vehicle_id" label="Veicolo" error={errors.vehicle_id?.message}>

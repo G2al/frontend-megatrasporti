@@ -7,9 +7,16 @@ import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime, formatKm, formatMoney, formatNumber, toNumber } from "@/lib/format";
 import type { Movement } from "@/types";
 
+const PAYMENT_LABEL: Record<"voucher" | "card" | "credit", string> = {
+  voucher: "Buono",
+  card: "Carta",
+  credit: "Credito",
+};
+
 export function MovementCard({ movement }: { movement: Movement }) {
   const adblue = toNumber(movement.adblue);
   const distance = movement.km_end - movement.km_start;
+  const paymentKind = movement.is_voucher ? "voucher" : movement.station_card_id !== null ? "card" : "credit";
 
   return (
     <article className="min-w-0 space-y-3 overflow-hidden rounded-xl border bg-card p-4 shadow-xs">
@@ -33,7 +40,7 @@ export function MovementCard({ movement }: { movement: Movement }) {
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
         <InfoItem icon={Truck} text={movement.vehicle?.plate ?? "—"} />
-        <InfoItem icon={movement.is_voucher ? Ticket : CreditCard} text={movement.is_voucher ? "Buono" : "Credito"} />
+        <InfoItem icon={paymentKind === "voucher" ? Ticket : CreditCard} text={PAYMENT_LABEL[paymentKind]} />
         <InfoItem icon={Route} text={`${formatKm(distance)} percorsi`} />
         {adblue !== null && adblue > 0 && <InfoItem icon={Droplets} text={`AdBlue ${formatNumber(adblue)} L`} />}
       </div>
