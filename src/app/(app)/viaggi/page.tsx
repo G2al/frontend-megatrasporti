@@ -8,14 +8,19 @@ import { RecordList } from "@/components/shared/record-list";
 import { RecordSheet } from "@/components/shared/record-sheet";
 import { TripCard } from "@/components/trips/trip-card";
 import { TripForm } from "@/components/trips/trip-form";
+import { useAuth } from "@/hooks/use-auth";
 import { usePlatforms, useTrips, useVehicles } from "@/hooks/use-data";
 import { useTabVehicles } from "@/hooks/use-tab-vehicles";
+import { canEditRecord } from "@/lib/form";
 import { byDateDesc, matchesSearch } from "@/lib/search";
+import type { Trip } from "@/types";
 
 export default function TripsPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Trip | null>(null);
 
   const trips = useTrips();
   const vehicles = useVehicles();
@@ -41,6 +46,23 @@ export default function TripsPage() {
     [trips.data, search, vehicleFilter],
   );
 
+  function openCreate() {
+    setEditing(null);
+    setOpen(true);
+  }
+
+  function openEdit(trip: Trip) {
+    setEditing(trip);
+    setOpen(true);
+  }
+
+  function canEditTrip(trip: Trip): boolean {
+    if (!canEditRecord(user, trip.user)) return false;
+    return !trip.is_certified || user?.role === "admin";
+  }
+
+  const ready = Boolean(vehicles.data && platforms.data);
+
   return (
     <>
       <ListToolbar
@@ -48,7 +70,7 @@ export default function TripsPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Cerca bolla, destinazione, targa..."
         actionLabel="Nuovo viaggio"
-        onAction={() => setOpen(true)}
+        onAction={openCreate}
         vehicles={tabVehicles}
         vehicleFilter={vehicleFilter}
         onVehicleFilterChange={setVehicleFilter}
@@ -63,17 +85,30 @@ export default function TripsPage() {
         icon={Truck}
         emptyTitle="Nessun viaggio"
         emptyDescription="Registra il tuo primo viaggio con il pulsante qui sopra."
-        render={(trip) => <TripCard trip={trip} />}
+        render={(trip) => (
+          <TripCard trip={trip} canEdit={canEditTrip(trip)} onEdit={() => openEdit(trip)} />
+        )}
       />
 
       <RecordSheet
         open={open}
-        onOpenChange={setOpen}
-        title="Nuovo viaggio"
-        description="Compila i dati del viaggio e allega la bolla."
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setEditing(null);
+        }}
+        title={editing ? "Modifica viaggio" : "Nuovo viaggio"}
+        description={editing ? "Aggiorna i dati del viaggio." : "Compila i dati del viaggio e allega la bolla."}
       >
-        {vehicles.data && platforms.data ? (
-          <TripForm vehicles={vehicles.data} platforms={platforms.data} onSaved={() => setOpen(false)} />
+        {ready ? (
+          <TripForm
+            vehicles={vehicles.data!}
+            platforms={platforms.data!}
+            trip={editing ?? undefined}
+            onSaved={() => {
+              setOpen(false);
+              setEditing(null);
+            }}
+          />
         ) : (
           <ListSkeleton count={2} />
         )}

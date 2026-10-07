@@ -55,6 +55,19 @@ export function saveSession(token: string, user: User, remember: boolean) {
   emit();
 }
 
+export function updateStoredUser(patch: Partial<User>) {
+  const current = parseUser(getUserRaw());
+  if (!current) return;
+  const next = { ...current, ...patch };
+  try {
+    const storage = window.localStorage.getItem(USER_KEY) !== null ? window.localStorage : window.sessionStorage;
+    storage.setItem(USER_KEY, JSON.stringify(next));
+  } catch {
+    return;
+  }
+  emit();
+}
+
 export function subscribeSession(listener: () => void) {
   listeners.add(listener);
   window.addEventListener("storage", listener);

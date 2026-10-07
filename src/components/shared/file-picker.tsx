@@ -15,6 +15,7 @@ interface FilePickerProps {
   onChange: (file: File | undefined) => void;
   accept: string;
   emptyLabel: string;
+  existingUrl?: string | null;
   invalid?: boolean;
   disabled?: boolean;
   ref?: Ref<HTMLButtonElement>;
@@ -26,6 +27,7 @@ export function FilePicker({
   onChange,
   accept,
   emptyLabel,
+  existingUrl,
   invalid,
   disabled,
   ref,
@@ -58,6 +60,9 @@ export function FilePicker({
     }
   }
 
+  const showingExisting = !value && Boolean(existingUrl);
+  const isImagePreview = value ? value.type.startsWith("image/") : showingExisting;
+
   return (
     <div className="space-y-2">
       <input
@@ -69,31 +74,41 @@ export function FilePicker({
         aria-hidden
         onChange={(event) => void handleFile(event.target.files?.[0])}
       />
-      {value ? (
+      {(value || showingExisting) && (
         <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-2">
           <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background">
-            {previewUrl ? (
-              <Image src={previewUrl} alt="Anteprima" fill unoptimized className="object-cover" />
+            {isImagePreview ? (
+              <Image
+                src={value ? (previewUrl ?? "") : (existingUrl ?? "")}
+                alt="Anteprima"
+                fill
+                unoptimized
+                className="object-cover"
+              />
             ) : (
               <FileText className="size-7 text-muted-foreground" aria-hidden />
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{value.name}</p>
-            <p className="text-xs text-muted-foreground">{formatFileSize(value.size)}</p>
+            <p className="truncate text-sm font-medium">{value ? value.name : "File attuale"}</p>
+            <p className="text-xs text-muted-foreground">
+              {value ? formatFileSize(value.size) : "Lascialo invariato o scegline uno nuovo"}
+            </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            className="size-11"
-            aria-label="Rimuovi file"
-            disabled={disabled}
-            onClick={() => onChange(undefined)}
-          >
-            <X />
-          </Button>
+          {value && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="size-11"
+              aria-label="Rimuovi file"
+              disabled={disabled}
+              onClick={() => onChange(undefined)}
+            >
+              <X />
+            </Button>
+          )}
         </div>
-      ) : null}
+      )}
       <Button
         id={id}
         ref={ref}
@@ -105,7 +120,7 @@ export function FilePicker({
         className={cn("h-12 w-full gap-2 text-base", invalid && "border-destructive")}
       >
         {processing ? <Loader2 className="animate-spin" /> : <Camera />}
-        {processing ? "Elaborazione..." : value ? "Cambia file" : emptyLabel}
+        {processing ? "Elaborazione..." : value || showingExisting ? "Cambia file" : emptyLabel}
       </Button>
     </div>
   );

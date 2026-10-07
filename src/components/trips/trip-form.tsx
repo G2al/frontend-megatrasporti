@@ -14,29 +14,34 @@ import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
 import { apiFetch } from "@/lib/api";
-import { handleSubmitError, vehicleOptions } from "@/lib/form";
-import { nowInputValue } from "@/lib/format";
+import { handleSubmitError } from "@/lib/form";
+import { nowInputValue, toInputDateTime } from "@/lib/format";
 import type { GoodsType, Platform, Trip, Vehicle } from "@/types";
 
-const schema = z.object({
-  date: z.string().min(1, "Inserisci data e ora."),
-  platform_id: z.string().min(1, "Seleziona una piattaforma."),
-  vehicle_id: z.string().min(1, "Seleziona una targa."),
-  destinations: z
-    .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
-    .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
-  goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
-  delivery_note_number: z
-    .string()
-    .min(1, "Inserisci il numero di bolla.")
-    .regex(/^\d+$/, "La bolla deve contenere solo cifre.")
-    .max(30, "Massimo 30 cifre."),
-  attachment: z.instanceof(File, { message: "L'allegato è obbligatorio." }),
-});
+function createSchema(requireAttachment: boolean) {
+  return z.object({
+    date: z.string().min(1, "Inserisci data e ora."),
+    platform_id: z.string().min(1, "Seleziona una piattaforma."),
+    vehicle_id: z.string().min(1, "Seleziona una targa."),
+    destinations: z
+      .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
+      .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
+    goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
+    delivery_note_number: z
+      .string()
+      .min(1, "Inserisci il numero di bolla.")
+      .regex(/^\d+$/, "La bolla deve contenere solo cifre.")
+      .max(30, "Massimo 30 cifre."),
+    attachment: requireAttachment
+      ? z.instanceof(File, { message: "L'allegato è obbligatorio." })
+      : z.instanceof(File).optional(),
+  });
+}
 
-type TripValues = z.infer<typeof schema>;
+type TripValues = z.infer<ReturnType<typeof createSchema>>;
 
 const GOODS_OPTIONS: Array<{ value: GoodsType; label: string }> = [
   { value: "secco", label: "Secco" },
@@ -46,16 +51,20 @@ const GOODS_OPTIONS: Array<{ value: GoodsType; label: string }> = [
 interface TripFormProps {
   vehicles: Vehicle[];
   platforms: Platform[];
+  trip?: Trip;
   onSaved: () => void;
 }
 
-export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
+export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) {
   const queryClient = useQueryClient();
+  const isEditing = Boolean(trip);
+  const schema = useMemo(() => createSchema(!isEditing), [isEditing]);
 
   const initialVehicle = useMemo(() => {
+    if (trip) return String(trip.vehicle?.id ?? "");
     const last = readLastVehicle();
     return vehicles.some((vehicle) => String(vehicle.id) === last) ? last : "";
-  }, [vehicles]);
+  }, [vehicles, trip]);
 
   const {
     register,
@@ -66,12 +75,12 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
   } = useForm<TripValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      date: nowInputValue(),
-      platform_id: "",
+      date: trip ? toInputDateTime(trip.date) : nowInputValue(),
+      platform_id: trip ? String(trip.platform?.id ?? "") : "",
       vehicle_id: initialVehicle,
-      destinations: [{ value: "" }],
-      goods_type: undefined,
-      delivery_note_number: "",
+      destinations: trip && trip.destinations.length > 0 ? trip.destinations.map((value) => ({ value })) : [{ value: "" }],
+      goods_type: trip?.goods_type,
+      delivery_note_number: trip?.delivery_note_number ?? "",
       attachment: undefined,
     },
   });
@@ -82,14 +91,16 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
     () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
     [platforms],
   );
-  const vehicleSelectOptions = useMemo(() => vehicleOptions(vehicles), [vehicles]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => apiFetch<Trip>("/trips", { method: "POST", body: data }),
+    mutationFn: (data: FormData) =>
+      isEditing
+        ? apiFetch<Trip>(`/trips/${trip!.id}`, { method: "PUT", body: data })
+        : apiFetch<Trip>("/trips", { method: "POST", body: data }),
     onSuccess: async (_result, data) => {
       saveLastVehicle(String(data.get("vehicle_id") ?? ""));
       await queryClient.invalidateQueries({ queryKey: ["trips"] });
-      toast.success("Viaggio salvato.");
+      toast.success(isEditing ? "Viaggio aggiornato." : "Viaggio salvato.");
       onSaved();
     },
   });
@@ -146,7 +157,6 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
               options={platformOptions}
               placeholder="Seleziona piattaforma"
               searchPlaceholder="Cerca piattaforma"
-              searchable={platformOptions.length > 8}
               invalid={Boolean(errors.platform_id)}
               disabled={pending}
             />
@@ -154,25 +164,22 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
         />
       </Field>
 
-      <Field id="vehicle_id" label="Targa" error={errors.vehicle_id?.message}>
-        <Controller
-          control={control}
-          name="vehicle_id"
-          render={({ field }) => (
-            <SearchableSelect
-              id="vehicle_id"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              options={vehicleSelectOptions}
-              placeholder="Seleziona targa"
-              searchPlaceholder="Cerca per targa o nome"
-              invalid={Boolean(errors.vehicle_id)}
-              disabled={pending}
-            />
-          )}
-        />
-      </Field>
+      <Controller
+        control={control}
+        name="vehicle_id"
+        render={({ field }) => (
+          <VehicleSelectField
+            id="vehicle_id"
+            label="Targa"
+            ref={field.ref}
+            value={field.value}
+            onChange={field.onChange}
+            vehicles={vehicles}
+            error={errors.vehicle_id?.message}
+            disabled={pending}
+          />
+        )}
+      />
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Destinazioni</legend>
@@ -280,6 +287,7 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
               onChange={field.onChange}
               accept="image/*,application/pdf"
               emptyLabel="Scatta o scegli un file"
+              existingUrl={trip?.attachment_url}
               invalid={Boolean(errors.attachment)}
               disabled={pending}
             />
@@ -287,7 +295,7 @@ export function TripForm({ vehicles, platforms, onSaved }: TripFormProps) {
         />
       </Field>
 
-      <SubmitButton pending={pending} label="Salva viaggio" />
+      <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva viaggio"} />
     </form>
   );
 }

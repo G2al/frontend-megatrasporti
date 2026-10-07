@@ -21,7 +21,7 @@ export class ApiError extends Error {
 type Query = Record<string, string | number | undefined | null>;
 
 interface RequestOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT";
   body?: FormData | Record<string, unknown>;
   query?: Query;
   headers?: Record<string, string>;
@@ -49,9 +49,16 @@ async function request(path: string, options: RequestOptions): Promise<Response>
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  let method = options.method ?? "GET";
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
     body = options.body;
+    if (method === "PUT") {
+      // Laravel/PHP non legge multipart/form-data su richieste PUT reali:
+      // si invia come POST con _method=PUT (method spoofing).
+      body.append("_method", "PUT");
+      method = "POST";
+    }
   } else if (options.body) {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(options.body);
@@ -60,7 +67,7 @@ async function request(path: string, options: RequestOptions): Promise<Response>
   let response: Response;
   try {
     response = await fetch(buildUrl(path, options.query), {
-      method: options.method ?? "GET",
+      method,
       headers,
       body,
       signal: options.signal,

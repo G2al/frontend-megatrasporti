@@ -1,11 +1,18 @@
-import { CalendarClock, FileText, Gauge, Store, Truck, User } from "lucide-react";
+import { CalendarClock, FileText, Gauge, Pencil, Store, Truck, User } from "lucide-react";
 import { AttachmentLink } from "@/components/shared/attachment-link";
 import { authorTitle } from "@/components/shared/author-line";
+import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDate, formatDateTime, formatKm, formatMoney } from "@/lib/format";
 import type { Maintenance } from "@/types";
 
-export function MaintenanceCard({ maintenance }: { maintenance: Maintenance }) {
+interface MaintenanceCardProps {
+  maintenance: Maintenance;
+  canEdit?: boolean;
+  onEdit?: () => void;
+}
+
+export function MaintenanceCard({ maintenance, canEdit, onEdit }: MaintenanceCardProps) {
   const nextParts = [
     maintenance.km_after !== null ? formatKm(maintenance.km_after) : null,
     maintenance.next_maintenance_date ? formatDate(maintenance.next_maintenance_date) : null,
@@ -13,12 +20,26 @@ export function MaintenanceCard({ maintenance }: { maintenance: Maintenance }) {
 
   return (
     <article className="min-w-0 space-y-3 overflow-hidden rounded-xl border bg-card p-4 shadow-xs">
-      <header className="min-w-0">
-        <h3 className="flex items-center gap-1.5 text-base font-semibold">
-          <FileText className="size-4 shrink-0 text-primary" aria-hidden />
-          <span className="truncate">Bolla {maintenance.invoice_number ?? "—"}</span>
-        </h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">{formatDateTime(maintenance.date)}</p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-1.5 text-base font-semibold">
+            <FileText className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="truncate">Bolla {maintenance.invoice_number ?? "—"}</span>
+          </h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">{formatDateTime(maintenance.date)}</p>
+        </div>
+        {canEdit && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="shrink-0"
+            aria-label="Modifica manutenzione"
+            onClick={onEdit}
+          >
+            <Pencil className="size-4" />
+          </Button>
+        )}
       </header>
 
       <div className="flex items-baseline justify-between gap-3 rounded-lg bg-secondary px-3 py-2">

@@ -8,6 +8,7 @@ export interface User {
   phone: string | null;
   email: string | null;
   role: Role;
+  must_change_password: boolean;
 }
 
 export interface Vehicle {
@@ -49,6 +50,7 @@ export interface Platform {
 }
 
 export interface Author {
+  id: number;
   full_name: string;
   role?: Role;
 }
@@ -67,6 +69,7 @@ export interface Movement {
   km_per_liter: number | string | null;
   photo_url: string | null;
   station: Station | null;
+  platform: Platform | null;
   vehicle: Vehicle | null;
   user: Author | null;
 }

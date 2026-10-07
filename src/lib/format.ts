@@ -46,6 +46,18 @@ export function nowInputValue(): string {
   return format(new Date(), "yyyy-MM-dd'T'HH:mm");
 }
 
+export function toInputDateTime(value: string | null | undefined): string {
+  if (!value) return nowInputValue();
+  const date = parseISO(value);
+  return isValid(date) ? format(date, "yyyy-MM-dd'T'HH:mm") : nowInputValue();
+}
+
+export function toInputDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = parseISO(value);
+  return isValid(date) ? format(date, "yyyy-MM-dd") : "";
+}
+
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes === null || bytes === undefined) return "—";
   if (bytes < 1024 * 1024) return `${numberFormatter.format(Math.max(bytes, 1) / 1024)} KB`;

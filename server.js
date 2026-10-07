@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- eseguito direttamente da Node, non da un bundler */
 const { createServer } = require("http");
 const next = require("next");
 

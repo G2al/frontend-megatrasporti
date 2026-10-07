@@ -8,18 +8,24 @@ import { ListToolbar } from "@/components/shared/list-toolbar";
 import { ListSkeleton } from "@/components/shared/list-states";
 import { RecordList } from "@/components/shared/record-list";
 import { RecordSheet } from "@/components/shared/record-sheet";
-import { useMovements, useStations, useVehicles } from "@/hooks/use-data";
+import { useAuth } from "@/hooks/use-auth";
+import { useMovements, usePlatforms, useStations, useVehicles } from "@/hooks/use-data";
 import { useTabVehicles } from "@/hooks/use-tab-vehicles";
+import { canEditRecord } from "@/lib/form";
 import { byDateDesc, matchesSearch } from "@/lib/search";
+import type { Movement } from "@/types";
 
 export default function MovementsPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Movement | null>(null);
 
   const movements = useMovements();
   const vehicles = useVehicles();
   const stations = useStations();
+  const platforms = usePlatforms();
 
   const tabVehicles = useTabVehicles(vehicles.data, movements.data);
 
@@ -40,6 +46,18 @@ export default function MovementsPage() {
     [movements.data, search, vehicleFilter],
   );
 
+  function openCreate() {
+    setEditing(null);
+    setOpen(true);
+  }
+
+  function openEdit(movement: Movement) {
+    setEditing(movement);
+    setOpen(true);
+  }
+
+  const ready = Boolean(vehicles.data && stations.data && platforms.data);
+
   return (
     <>
       <ListToolbar
@@ -47,7 +65,7 @@ export default function MovementsPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Cerca stazione, targa, note..."
         actionLabel="Nuovo rifornimento"
-        onAction={() => setOpen(true)}
+        onAction={openCreate}
         vehicles={tabVehicles}
         vehicleFilter={vehicleFilter}
         onVehicleFilterChange={setVehicleFilter}
@@ -62,17 +80,39 @@ export default function MovementsPage() {
         icon={PumpIcon}
         emptyTitle="Nessun rifornimento"
         emptyDescription="Registra il tuo primo rifornimento con il pulsante qui sopra."
-        render={(movement) => <MovementCard movement={movement} />}
+        render={(movement) => (
+          <MovementCard
+            movement={movement}
+            canEdit={canEditRecord(user, movement.user)}
+            onEdit={() => openEdit(movement)}
+          />
+        )}
       />
 
       <RecordSheet
         open={open}
-        onOpenChange={setOpen}
-        title="Nuovo rifornimento"
-        description="Compila i dati e allega la foto della ricevuta."
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setEditing(null);
+        }}
+        title={editing ? "Modifica rifornimento" : "Nuovo rifornimento"}
+        description={
+          editing
+            ? "Aggiorna i dati del rifornimento."
+            : "Compila i dati e allega la foto della ricevuta."
+        }
       >
-        {vehicles.data && stations.data ? (
-          <MovementForm vehicles={vehicles.data} stations={stations.data} onSaved={() => setOpen(false)} />
+        {ready ? (
+          <MovementForm
+            vehicles={vehicles.data!}
+            stations={stations.data!}
+            platforms={platforms.data!}
+            movement={editing ?? undefined}
+            onSaved={() => {
+              setOpen(false);
+              setEditing(null);
+            }}
+          />
         ) : (
           <ListSkeleton count={2} />
         )}

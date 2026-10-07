@@ -1,7 +1,8 @@
 import { Fragment } from "react";
-import { ArrowRight, FileText, Layers, Truck, User, Warehouse } from "lucide-react";
+import { ArrowRight, FileText, Layers, Pencil, Truck, User, Warehouse } from "lucide-react";
 import { AttachmentLink } from "@/components/shared/attachment-link";
 import { authorTitle } from "@/components/shared/author-line";
+import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,13 @@ const GOODS_LABELS: Record<GoodsType, string> = {
   freschi: "Freschi",
 };
 
-export function TripCard({ trip }: { trip: Trip }) {
+interface TripCardProps {
+  trip: Trip;
+  canEdit?: boolean;
+  onEdit?: () => void;
+}
+
+export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
   return (
     <article className="min-w-0 space-y-3 overflow-hidden rounded-xl border bg-card p-4 shadow-xs">
       <header className="flex items-start justify-between gap-3">
@@ -23,14 +30,27 @@ export function TripCard({ trip }: { trip: Trip }) {
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">{formatDateTime(trip.date)}</p>
         </div>
-        <span
-          className={cn(
-            "inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold whitespace-nowrap",
-            trip.is_certified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-900",
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold whitespace-nowrap",
+              trip.is_certified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-900",
+            )}
+          >
+            {trip.is_certified ? "Certificato" : "Da certificare"}
+          </span>
+          {canEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Modifica viaggio"
+              onClick={onEdit}
+            >
+              <Pencil className="size-4" />
+            </Button>
           )}
-        >
-          {trip.is_certified ? "Certificato" : "Da certificare"}
-        </span>
+        </div>
       </header>
 
       {trip.destinations.length > 0 && (

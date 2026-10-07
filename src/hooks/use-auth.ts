@@ -11,8 +11,9 @@ import {
   parseUser,
   saveSession,
   subscribeSession,
+  updateStoredUser,
 } from "@/lib/auth";
-import type { LoginResponse } from "@/types";
+import type { LoginResponse, User } from "@/types";
 
 const noopSubscribe = () => () => {};
 
@@ -51,5 +52,9 @@ export function useAuth() {
     router.replace("/login");
   }, [queryClient, router]);
 
-  return { ready, isAuthenticated: Boolean(token), user, login, logout };
+  const updateUser = useCallback((patch: Partial<User>) => {
+    updateStoredUser(patch);
+  }, []);
+
+  return { ready, isAuthenticated: Boolean(token), user, login, logout, updateUser };
 }

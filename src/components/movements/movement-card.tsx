@@ -1,8 +1,9 @@
-import { ArrowRight, CreditCard, Droplets, Gauge, MapPin, Route, Ticket, Truck, User } from "lucide-react";
+import { ArrowRight, CreditCard, Droplets, Gauge, MapPin, Pencil, Route, Ticket, Truck, User } from "lucide-react";
 import { ConsumptionBadge } from "@/components/movements/consumption-badge";
 import { ReceiptThumb } from "@/components/movements/receipt-thumb";
 import { AttachmentLink } from "@/components/shared/attachment-link";
 import { authorTitle } from "@/components/shared/author-line";
+import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime, formatKm, formatMoney, formatNumber, toNumber } from "@/lib/format";
 import type { Movement } from "@/types";
@@ -13,7 +14,13 @@ const PAYMENT_LABEL: Record<"voucher" | "card" | "credit", string> = {
   credit: "Credito",
 };
 
-export function MovementCard({ movement }: { movement: Movement }) {
+interface MovementCardProps {
+  movement: Movement;
+  canEdit?: boolean;
+  onEdit?: () => void;
+}
+
+export function MovementCard({ movement, canEdit, onEdit }: MovementCardProps) {
   const adblue = toNumber(movement.adblue);
   const distance = movement.km_end - movement.km_start;
   const paymentKind = movement.is_voucher ? "voucher" : movement.station_card_id !== null ? "card" : "credit";
@@ -30,7 +37,20 @@ export function MovementCard({ movement }: { movement: Movement }) {
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">{formatDateTime(movement.date)}</p>
         </div>
-        <ConsumptionBadge value={movement.km_per_liter} />
+        <div className="flex shrink-0 items-center gap-2">
+          <ConsumptionBadge value={movement.km_per_liter} />
+          {canEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Modifica rifornimento"
+              onClick={onEdit}
+            >
+              <Pencil className="size-4" />
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="flex items-baseline justify-between gap-3 rounded-lg bg-secondary px-3 py-2">

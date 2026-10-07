@@ -1,7 +1,7 @@
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
-import type { Vehicle } from "@/types";
+import type { Author, User, Vehicle } from "@/types";
 import type { SelectOption } from "@/components/shared/searchable-select";
 
 export function handleSubmitError<T extends FieldValues>(
@@ -37,4 +37,10 @@ export function vehicleOptions(vehicles: Vehicle[]): SelectOption[] {
 
 export function appendOptional(data: FormData, key: string, value: string | undefined) {
   if (value !== undefined && value.trim() !== "") data.append(key, value.trim());
+}
+
+export function canEditRecord(user: User | null, author: Author | null | undefined): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  return author?.id === user.id;
 }

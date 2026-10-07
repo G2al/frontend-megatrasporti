@@ -12,56 +12,65 @@ import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
 import { apiFetch } from "@/lib/api";
-import { appendOptional, handleSubmitError, vehicleOptions } from "@/lib/form";
-import { formatNumber, nowInputValue, parseDecimal } from "@/lib/format";
+import { appendOptional, handleSubmitError } from "@/lib/form";
+import { formatNumber, nowInputValue, parseDecimal, toInputDate, toInputDateTime } from "@/lib/format";
 import type { Maintenance, Supplier, Vehicle } from "@/types";
 
 const optionalInteger = z.string().trim().refine((value) => value === "" || /^\d+$/.test(value), "Inserisci solo numeri interi.");
 
-const schema = z
-  .object({
-    date: z.string().min(1, "Inserisci data e ora."),
-    supplier_id: z.string().min(1, "Seleziona un fornitore."),
-    vehicle_id: z.string().min(1, "Seleziona un veicolo."),
-    km: z.string().trim().min(1, "Inserisci i km della manutenzione.").regex(/^\d+$/, "Inserisci solo numeri interi."),
-    km_after: optionalInteger,
-    next_maintenance_date: z.string(),
-    invoice_number: z.string().trim().min(1, "Inserisci il numero di bolla."),
-    price: z
-      .string()
-      .trim()
-      .min(1, "Inserisci il prezzo.")
-      .refine((value) => Number.isFinite(parseDecimal(value)) && parseDecimal(value) >= 0, "Inserisci un prezzo valido."),
-    notes: z.string().trim().min(1, "Inserisci i dettagli dell'intervento."),
-    attachment: z.instanceof(File, { message: "L'allegato è obbligatorio." }),
-  })
-  .superRefine((values, context) => {
-    if (values.km_after !== "" && /^\d+$/.test(values.km) && Number(values.km_after) <= Number(values.km)) {
-      context.addIssue({
-        code: "custom",
-        path: ["km_after"],
-        message: "I km della prossima manutenzione devono essere maggiori dei km attuali.",
-      });
-    }
-  });
+function createSchema(requireAttachment: boolean) {
+  return z
+    .object({
+      date: z.string().min(1, "Inserisci data e ora."),
+      supplier_id: z.string().min(1, "Seleziona un fornitore."),
+      vehicle_id: z.string().min(1, "Seleziona un veicolo."),
+      km: z.string().trim().min(1, "Inserisci i km della manutenzione.").regex(/^\d+$/, "Inserisci solo numeri interi."),
+      km_after: optionalInteger,
+      next_maintenance_date: z.string(),
+      invoice_number: z.string().trim().min(1, "Inserisci il numero di bolla."),
+      price: z
+        .string()
+        .trim()
+        .min(1, "Inserisci il prezzo.")
+        .refine((value) => Number.isFinite(parseDecimal(value)) && parseDecimal(value) >= 0, "Inserisci un prezzo valido."),
+      notes: z.string().trim().min(1, "Inserisci i dettagli dell'intervento."),
+      attachment: requireAttachment
+        ? z.instanceof(File, { message: "L'allegato è obbligatorio." })
+        : z.instanceof(File).optional(),
+    })
+    .superRefine((values, context) => {
+      if (values.km_after !== "" && /^\d+$/.test(values.km) && Number(values.km_after) <= Number(values.km)) {
+        context.addIssue({
+          code: "custom",
+          path: ["km_after"],
+          message: "I km della prossima manutenzione devono essere maggiori dei km attuali.",
+        });
+      }
+    });
+}
 
-type MaintenanceValues = z.infer<typeof schema>;
+type MaintenanceValues = z.infer<ReturnType<typeof createSchema>>;
 
 interface MaintenanceFormProps {
   vehicles: Vehicle[];
   suppliers: Supplier[];
+  maintenance?: Maintenance;
   onSaved: () => void;
 }
 
-export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFormProps) {
+export function MaintenanceForm({ vehicles, suppliers, maintenance, onSaved }: MaintenanceFormProps) {
   const queryClient = useQueryClient();
+  const isEditing = Boolean(maintenance);
+  const schema = useMemo(() => createSchema(!isEditing), [isEditing]);
 
   const initialVehicle = useMemo(() => {
+    if (maintenance) return String(maintenance.vehicle?.id ?? "");
     const last = readLastVehicle();
     return vehicles.some((vehicle) => String(vehicle.id) === last) ? last : "";
-  }, [vehicles]);
+  }, [vehicles, maintenance]);
 
   const {
     register,
@@ -73,15 +82,15 @@ export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFor
   } = useForm<MaintenanceValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      date: nowInputValue(),
-      supplier_id: "",
+      date: maintenance ? toInputDateTime(maintenance.date) : nowInputValue(),
+      supplier_id: maintenance ? String(maintenance.supplier?.id ?? "") : "",
       vehicle_id: initialVehicle,
-      km: "",
-      km_after: "",
-      next_maintenance_date: "",
-      invoice_number: "",
-      price: "",
-      notes: "",
+      km: maintenance ? String(maintenance.km_current ?? "") : "",
+      km_after: maintenance?.km_after !== null && maintenance?.km_after !== undefined ? String(maintenance.km_after) : "",
+      next_maintenance_date: maintenance ? toInputDate(maintenance.next_maintenance_date) : "",
+      invoice_number: maintenance?.invoice_number ?? "",
+      price: maintenance ? String(maintenance.price) : "",
+      notes: maintenance?.notes ?? "",
       attachment: undefined,
     },
   });
@@ -90,25 +99,27 @@ export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFor
   const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === vehicleId);
 
   useEffect(() => {
-    if (selectedVehicle?.maintenance_km !== null && selectedVehicle?.maintenance_km !== undefined) {
+    if (!isEditing && selectedVehicle?.maintenance_km !== null && selectedVehicle?.maintenance_km !== undefined) {
       setValue("km", String(selectedVehicle.maintenance_km));
     }
-  }, [selectedVehicle, setValue]);
+  }, [isEditing, selectedVehicle, setValue]);
 
   const supplierOptions = useMemo(
     () => suppliers.map((supplier) => ({ value: String(supplier.id), label: supplier.name })),
     [suppliers],
   );
-  const vehicleSelectOptions = useMemo(() => vehicleOptions(vehicles), [vehicles]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => apiFetch<Maintenance>("/maintenances", { method: "POST", body: data }),
+    mutationFn: (data: FormData) =>
+      isEditing
+        ? apiFetch<Maintenance>(`/maintenances/${maintenance!.id}`, { method: "PUT", body: data })
+        : apiFetch<Maintenance>("/maintenances", { method: "POST", body: data }),
     onSuccess: async (_result, data) => {
       saveLastVehicle(String(data.get("vehicle_id") ?? ""));
       await Promise.all(
         ["maintenances", "vehicles"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
       );
-      toast.success("Manutenzione salvata.");
+      toast.success(isEditing ? "Manutenzione aggiornata." : "Manutenzione salvata.");
       onSaved();
     },
   });
@@ -169,25 +180,22 @@ export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFor
         />
       </Field>
 
-      <Field id="vehicle_id" label="Veicolo" error={errors.vehicle_id?.message}>
-        <Controller
-          control={control}
-          name="vehicle_id"
-          render={({ field }) => (
-            <SearchableSelect
-              id="vehicle_id"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              options={vehicleSelectOptions}
-              placeholder="Seleziona veicolo"
-              searchPlaceholder="Cerca per targa o nome"
-              invalid={Boolean(errors.vehicle_id)}
-              disabled={pending}
-            />
-          )}
-        />
-      </Field>
+      <Controller
+        control={control}
+        name="vehicle_id"
+        render={({ field }) => (
+          <VehicleSelectField
+            id="vehicle_id"
+            label="Veicolo"
+            ref={field.ref}
+            value={field.value}
+            onChange={field.onChange}
+            vehicles={vehicles}
+            error={errors.vehicle_id?.message}
+            disabled={pending}
+          />
+        )}
+      />
 
       <Field id="km" label="Km manutenzione" error={errors.km?.message}>
         <Input
@@ -278,6 +286,7 @@ export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFor
               onChange={field.onChange}
               accept="image/*,application/pdf"
               emptyLabel="Scatta o scegli un file"
+              existingUrl={maintenance?.attachment_url}
               invalid={Boolean(errors.attachment)}
               disabled={pending}
             />
@@ -285,7 +294,7 @@ export function MaintenanceForm({ vehicles, suppliers, onSaved }: MaintenanceFor
         />
       </Field>
 
-      <SubmitButton pending={pending} label="Salva manutenzione" />
+      <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva manutenzione"} />
     </form>
   );
 }
