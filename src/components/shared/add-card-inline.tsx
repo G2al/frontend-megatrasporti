@@ -80,7 +80,7 @@ export function AddCardInline({ stationId, stationName, onCreated }: AddCardInli
   }
 
   return (
-    <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+    <div className="animate-in fade-in slide-in-from-top-1 space-y-3 rounded-lg border-l-4 border-primary bg-secondary/60 p-3 duration-200">
       <div className="flex items-center justify-between">
         <p className="truncate text-sm font-semibold">Nuova carta — {stationName}</p>
         <Button

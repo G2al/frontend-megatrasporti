@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 interface FieldProps {
   id: string;
   label: string;
+  icon?: ComponentType<{ className?: string }>;
   error?: string;
   hint?: ReactNode;
   optional?: boolean;
@@ -12,10 +13,11 @@ interface FieldProps {
   children: ReactNode;
 }
 
-export function Field({ id, label, error, hint, optional, className, children }: FieldProps) {
+export function Field({ id, label, icon: Icon, error, hint, optional, className, children }: FieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label htmlFor={id} className="text-sm font-medium">
+      <Label htmlFor={id} className="flex items-center gap-1.5 text-sm font-medium">
+        {Icon && <Icon className="size-4 shrink-0 text-primary" aria-hidden />}
         {label}
         {optional && <span className="font-normal text-muted-foreground"> (opzionale)</span>}
       </Label>

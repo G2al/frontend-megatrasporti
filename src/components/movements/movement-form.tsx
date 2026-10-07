@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, Camera, CreditCard, Droplets, Euro, Fuel, Gauge, MapPin, StickyNote, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { ConsumptionBadge } from "@/components/movements/consumption-badge";
 import { AddCardInline } from "@/components/shared/add-card-inline";
 import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
+import { FormSection } from "@/components/shared/form-section";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import type { SelectOption } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
@@ -218,211 +220,220 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
   const credit = toNumber(station?.credit_balance);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <Field id="date" label="Data e ora" error={errors.date?.message}>
-        <Input
-          id="date"
-          type="datetime-local"
-          className="h-11"
-          aria-invalid={Boolean(errors.date)}
-          disabled={pending}
-          {...register("date")}
-        />
-      </Field>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-7">
+      <FormSection title="Quando e dove">
+        <Field id="date" label="Data e ora" icon={CalendarClock} error={errors.date?.message}>
+          <Input
+            id="date"
+            type="datetime-local"
+            className="h-11"
+            aria-invalid={Boolean(errors.date)}
+            disabled={pending}
+            {...register("date")}
+          />
+        </Field>
 
-      <Field
-        id="station_id"
-        label="Stazione"
-        error={errors.station_id?.message}
-        hint={station && credit !== null ? `Credito residuo: ${formatMoney(credit)}` : undefined}
-      >
-        <Controller
-          control={control}
-          name="station_id"
-          render={({ field }) => (
-            <SearchableSelect
-              id="station_id"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              options={stationOptions}
-              placeholder="Seleziona stazione"
-              searchPlaceholder="Cerca stazione"
-              invalid={Boolean(errors.station_id)}
-              disabled={pending}
-            />
-          )}
-        />
-      </Field>
-
-      {station?.uses_vouchers && (
-        <Controller
-          control={control}
-          name="is_voucher"
-          render={({ field }) => (
-            <SwitchRow id="is_voucher" label="Pagamento con buono" checked={field.value} onChange={field.onChange} />
-          )}
-        />
-      )}
-
-      {station?.uses_credit_cards && (
-        <Field id="station_card_id" label="Carta di credito" error={errors.station_card_id?.message}>
-          <div className="space-y-2">
-            <Controller
-              control={control}
-              name="station_card_id"
-              render={({ field }) => (
-                <SearchableSelect
-                  id="station_card_id"
-                  ref={field.ref}
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={cardOptions}
-                  placeholder="Seleziona carta"
-                  searchPlaceholder="Cerca per numero"
-                  invalid={Boolean(errors.station_card_id)}
-                  disabled={pending}
-                />
-              )}
-            />
-            {station && (
-              <AddCardInline
-                stationId={station.id}
-                stationName={station.name}
-                onCreated={(card) => setValue("station_card_id", String(card.id))}
+        <Field
+          id="station_id"
+          label="Stazione"
+          icon={MapPin}
+          error={errors.station_id?.message}
+          hint={station && credit !== null ? `Credito residuo: ${formatMoney(credit)}` : undefined}
+        >
+          <Controller
+            control={control}
+            name="station_id"
+            render={({ field }) => (
+              <SearchableSelect
+                id="station_id"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                options={stationOptions}
+                placeholder="Seleziona stazione"
+                searchPlaceholder="Cerca stazione"
+                invalid={Boolean(errors.station_id)}
+                disabled={pending}
               />
             )}
-          </div>
+          />
         </Field>
-      )}
 
-      <Field id="platform_id" label="Piattaforma" error={errors.platform_id?.message}>
-        <Controller
-          control={control}
-          name="platform_id"
-          render={({ field }) => (
-            <SearchableSelect
-              id="platform_id"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              options={platformOptions}
-              placeholder="Seleziona piattaforma"
-              searchPlaceholder="Cerca piattaforma"
-              invalid={Boolean(errors.platform_id)}
-              disabled={pending}
-            />
-          )}
-        />
-      </Field>
-
-      <Controller
-        control={control}
-        name="vehicle_id"
-        render={({ field }) => (
-          <VehicleSelectField
-            id="vehicle_id"
-            label="Veicolo"
-            ref={field.ref}
-            value={field.value}
-            onChange={field.onChange}
-            vehicles={vehicles}
-            error={errors.vehicle_id?.message}
-            disabled={pending}
+        {station?.uses_vouchers && (
+          <Controller
+            control={control}
+            name="is_voucher"
+            render={({ field }) => (
+              <SwitchRow id="is_voucher" label="Pagamento con buono" checked={field.value} onChange={field.onChange} />
+            )}
           />
         )}
-      />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="km_start" label="Km iniziali" error={errors.km_start?.message}>
-          <Input
-            id="km_start"
-            inputMode="numeric"
-            className="h-11"
-            aria-invalid={Boolean(errors.km_start)}
-            disabled={pending}
-            {...register("km_start")}
+        {station?.uses_credit_cards && (
+          <Field id="station_card_id" label="Carta di credito" icon={CreditCard} error={errors.station_card_id?.message}>
+            <div className="space-y-2">
+              <Controller
+                control={control}
+                name="station_card_id"
+                render={({ field }) => (
+                  <SearchableSelect
+                    id="station_card_id"
+                    ref={field.ref}
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={cardOptions}
+                    placeholder="Seleziona carta"
+                    searchPlaceholder="Cerca per numero"
+                    invalid={Boolean(errors.station_card_id)}
+                    disabled={pending}
+                  />
+                )}
+              />
+              {station && (
+                <AddCardInline
+                  stationId={station.id}
+                  stationName={station.name}
+                  onCreated={(card) => setValue("station_card_id", String(card.id))}
+                />
+              )}
+            </div>
+          </Field>
+        )}
+
+        <Field id="platform_id" label="Piattaforma" icon={Warehouse} error={errors.platform_id?.message}>
+          <Controller
+            control={control}
+            name="platform_id"
+            render={({ field }) => (
+              <SearchableSelect
+                id="platform_id"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                options={platformOptions}
+                placeholder="Seleziona piattaforma"
+                searchPlaceholder="Cerca piattaforma"
+                invalid={Boolean(errors.platform_id)}
+                disabled={pending}
+              />
+            )}
           />
         </Field>
-        <Field id="km_end" label="Km finali" error={errors.km_end?.message}>
-          <Input
-            id="km_end"
-            inputMode="numeric"
-            className="h-11"
-            aria-invalid={Boolean(errors.km_end)}
-            disabled={pending}
-            {...register("km_end")}
-          />
-        </Field>
-      </div>
+      </FormSection>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="liters" label="Litri" error={errors.liters?.message}>
-          <Input
-            id="liters"
-            inputMode="decimal"
-            className="h-11"
-            aria-invalid={Boolean(errors.liters)}
-            disabled={pending}
-            {...register("liters")}
-          />
-        </Field>
-        <Field id="price" label="Prezzo totale (€)" error={errors.price?.message}>
-          <Input
-            id="price"
-            inputMode="decimal"
-            className="h-11"
-            aria-invalid={Boolean(errors.price)}
-            disabled={pending}
-            {...register("price")}
-          />
-        </Field>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-3 py-2.5">
-        <span className="text-sm font-medium text-secondary-foreground">Media ticket</span>
-        <span className="flex items-center gap-2">
-          {ticketAverage !== null && (
-            <span className="text-sm text-muted-foreground">{formatNumber(ticketAverage)} km/L</span>
-          )}
-          <ConsumptionBadge value={ticketAverage} />
-        </span>
-      </div>
-
-      <Field id="adblue" label="AdBlue" optional error={errors.adblue?.message}>
-        <Input
-          id="adblue"
-          inputMode="decimal"
-          className="h-11"
-          aria-invalid={Boolean(errors.adblue)}
-          disabled={pending}
-          {...register("adblue")}
-        />
-      </Field>
-
-      <Field id="notes" label="Note" optional error={errors.notes?.message}>
-        <Textarea id="notes" rows={3} className="text-base" disabled={pending} {...register("notes")} />
-      </Field>
-
-      <Field id="photo" label="Foto ricevuta" error={errors.photo?.message}>
+      <FormSection title="Veicolo e chilometraggio">
         <Controller
           control={control}
-          name="photo"
+          name="vehicle_id"
           render={({ field }) => (
-            <FilePicker
-              id="photo"
+            <VehicleSelectField
+              id="vehicle_id"
+              label="Veicolo"
               ref={field.ref}
               value={field.value}
               onChange={field.onChange}
-              accept="image/*"
-              emptyLabel="Scatta o scegli una foto"
-              existingUrl={movement?.photo_url}
-              invalid={Boolean(errors.photo)}
+              vehicles={vehicles}
+              error={errors.vehicle_id?.message}
               disabled={pending}
             />
           )}
         />
-      </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field id="km_start" label="Km iniziali" icon={Gauge} error={errors.km_start?.message}>
+            <Input
+              id="km_start"
+              inputMode="numeric"
+              className="h-11"
+              aria-invalid={Boolean(errors.km_start)}
+              disabled={pending}
+              {...register("km_start")}
+            />
+          </Field>
+          <Field id="km_end" label="Km finali" icon={Gauge} error={errors.km_end?.message}>
+            <Input
+              id="km_end"
+              inputMode="numeric"
+              className="h-11"
+              aria-invalid={Boolean(errors.km_end)}
+              disabled={pending}
+              {...register("km_end")}
+            />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="Consumi">
+        <div className="grid grid-cols-2 gap-3">
+          <Field id="liters" label="Litri" icon={Fuel} error={errors.liters?.message}>
+            <Input
+              id="liters"
+              inputMode="decimal"
+              className="h-11"
+              aria-invalid={Boolean(errors.liters)}
+              disabled={pending}
+              {...register("liters")}
+            />
+          </Field>
+          <Field id="price" label="Prezzo (€)" icon={Euro} error={errors.price?.message}>
+            <Input
+              id="price"
+              inputMode="decimal"
+              className="h-11"
+              aria-invalid={Boolean(errors.price)}
+              disabled={pending}
+              {...register("price")}
+            />
+          </Field>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-3 py-2.5">
+          <span className="text-sm font-medium text-secondary-foreground">Media ticket</span>
+          <span className="flex items-center gap-2">
+            {ticketAverage !== null && (
+              <span className="text-sm text-muted-foreground">{formatNumber(ticketAverage)} km/L</span>
+            )}
+            <ConsumptionBadge value={ticketAverage} />
+          </span>
+        </div>
+
+        <Field id="adblue" label="AdBlue" icon={Droplets} optional error={errors.adblue?.message}>
+          <Input
+            id="adblue"
+            inputMode="decimal"
+            className="h-11"
+            aria-invalid={Boolean(errors.adblue)}
+            disabled={pending}
+            {...register("adblue")}
+          />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Note e ricevuta">
+        <Field id="notes" label="Note" icon={StickyNote} optional error={errors.notes?.message}>
+          <Textarea id="notes" rows={3} className="text-base" disabled={pending} {...register("notes")} />
+        </Field>
+
+        <Field id="photo" label="Foto ricevuta" icon={Camera} error={errors.photo?.message}>
+          <Controller
+            control={control}
+            name="photo"
+            render={({ field }) => (
+              <FilePicker
+                id="photo"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                accept="image/*"
+                emptyLabel="Scatta o scegli una foto"
+                existingUrl={movement?.photo_url}
+                invalid={Boolean(errors.photo)}
+                disabled={pending}
+              />
+            )}
+          />
+        </Field>
+      </FormSection>
 
       <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva rifornimento"} />
     </form>

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { CalendarClock, FileText, Layers, MapPin, Paperclip, Plus, Trash2, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
+import { FormSection } from "@/components/shared/form-section";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
@@ -132,168 +133,177 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     errors.destinations?.find?.((item) => item?.value)?.value?.message;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <Field id="date" label="Data e ora" error={errors.date?.message}>
-        <Input
-          id="date"
-          type="datetime-local"
-          className="h-11"
-          aria-invalid={Boolean(errors.date)}
-          disabled={pending}
-          {...register("date")}
-        />
-      </Field>
-
-      <Field id="platform_id" label="Piattaforma" error={errors.platform_id?.message}>
-        <Controller
-          control={control}
-          name="platform_id"
-          render={({ field }) => (
-            <SearchableSelect
-              id="platform_id"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              options={platformOptions}
-              placeholder="Seleziona piattaforma"
-              searchPlaceholder="Cerca piattaforma"
-              invalid={Boolean(errors.platform_id)}
-              disabled={pending}
-            />
-          )}
-        />
-      </Field>
-
-      <Controller
-        control={control}
-        name="vehicle_id"
-        render={({ field }) => (
-          <VehicleSelectField
-            id="vehicle_id"
-            label="Targa"
-            ref={field.ref}
-            value={field.value}
-            onChange={field.onChange}
-            vehicles={vehicles}
-            error={errors.vehicle_id?.message}
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-7">
+      <FormSection title="Quando e dove">
+        <Field id="date" label="Data e ora" icon={CalendarClock} error={errors.date?.message}>
+          <Input
+            id="date"
+            type="datetime-local"
+            className="h-11"
+            aria-invalid={Boolean(errors.date)}
             disabled={pending}
+            {...register("date")}
           />
-        )}
-      />
+        </Field>
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Destinazioni</legend>
-        {fields.map((item, index) => (
-          <div key={item.id} className="flex items-center gap-2">
-            <Input
-              aria-label={`Destinazione ${index + 1}`}
-              placeholder={`Destinazione ${index + 1}`}
-              maxLength={255}
-              className="flex h-11 items-center py-0 leading-normal"
-              disabled={pending}
-              aria-invalid={Boolean(errors.destinations?.[index]?.value)}
-              {...register(`destinations.${index}.value`)}
-            />
-            {fields.length > 1 && (
-              <Button
-                type="button"
-                variant="outline"
-                className="size-11 shrink-0"
-                aria-label={`Rimuovi destinazione ${index + 1}`}
+        <Field id="platform_id" label="Piattaforma" icon={Warehouse} error={errors.platform_id?.message}>
+          <Controller
+            control={control}
+            name="platform_id"
+            render={({ field }) => (
+              <SearchableSelect
+                id="platform_id"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                options={platformOptions}
+                placeholder="Seleziona piattaforma"
+                searchPlaceholder="Cerca piattaforma"
+                invalid={Boolean(errors.platform_id)}
                 disabled={pending}
-                onClick={() => remove(index)}
-              >
-                <Trash2 />
-              </Button>
+              />
             )}
-          </div>
-        ))}
-        {destinationsError && (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {destinationsError}
-          </p>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 w-full gap-2"
-          disabled={pending}
-          onClick={() => append({ value: "" })}
-        >
-          <Plus />
-          Aggiungi destinazione
-        </Button>
-      </fieldset>
+          />
+        </Field>
 
-      <Field id="goods_type" label="Dicitura" error={errors.goods_type?.message}>
         <Controller
           control={control}
-          name="goods_type"
+          name="vehicle_id"
           render={({ field }) => (
-            <RadioGroup
-              id="goods_type"
-              value={field.value ?? ""}
-              onValueChange={(value) => field.onChange(value)}
-              aria-label="Dicitura"
-              className="grid-cols-2"
-              disabled={pending}
-            >
-              {GOODS_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 text-base has-data-checked:border-primary has-data-checked:bg-secondary"
-                >
-                  <RadioGroupItem value={option.value} ref={field.ref} />
-                  {option.label}
-                </label>
-              ))}
-            </RadioGroup>
-          )}
-        />
-      </Field>
-
-      <Field id="delivery_note_number" label="Bolla" error={errors.delivery_note_number?.message}>
-        <Controller
-          control={control}
-          name="delivery_note_number"
-          render={({ field }) => (
-            <Input
-              id="delivery_note_number"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={30}
-              className="h-11"
-              aria-invalid={Boolean(errors.delivery_note_number)}
-              disabled={pending}
-              ref={field.ref}
-              name={field.name}
-              onBlur={field.onBlur}
-              value={field.value}
-              onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
-            />
-          )}
-        />
-      </Field>
-
-      <Field id="attachment" label="Allegato" error={errors.attachment?.message}>
-        <Controller
-          control={control}
-          name="attachment"
-          render={({ field }) => (
-            <FilePicker
-              id="attachment"
+            <VehicleSelectField
+              id="vehicle_id"
+              label="Targa"
               ref={field.ref}
               value={field.value}
               onChange={field.onChange}
-              accept="image/*,application/pdf"
-              emptyLabel="Scatta o scegli un file"
-              existingUrl={trip?.attachment_url}
-              invalid={Boolean(errors.attachment)}
+              vehicles={vehicles}
+              error={errors.vehicle_id?.message}
               disabled={pending}
             />
           )}
         />
-      </Field>
+      </FormSection>
+
+      <FormSection title="Destinazioni e carico">
+        <fieldset className="space-y-2">
+          <legend className="flex items-center gap-1.5 text-sm font-medium">
+            <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
+            Destinazioni
+          </legend>
+          {fields.map((item, index) => (
+            <div key={item.id} className="flex items-center gap-2">
+              <Input
+                aria-label={`Destinazione ${index + 1}`}
+                placeholder={`Destinazione ${index + 1}`}
+                maxLength={255}
+                className="flex h-11 items-center py-0 leading-normal"
+                disabled={pending}
+                aria-invalid={Boolean(errors.destinations?.[index]?.value)}
+                {...register(`destinations.${index}.value`)}
+              />
+              {fields.length > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="size-11 shrink-0"
+                  aria-label={`Rimuovi destinazione ${index + 1}`}
+                  disabled={pending}
+                  onClick={() => remove(index)}
+                >
+                  <Trash2 />
+                </Button>
+              )}
+            </div>
+          ))}
+          {destinationsError && (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {destinationsError}
+            </p>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full gap-2"
+            disabled={pending}
+            onClick={() => append({ value: "" })}
+          >
+            <Plus />
+            Aggiungi destinazione
+          </Button>
+        </fieldset>
+
+        <Field id="goods_type" label="Dicitura" icon={Layers} error={errors.goods_type?.message}>
+          <Controller
+            control={control}
+            name="goods_type"
+            render={({ field }) => (
+              <RadioGroup
+                id="goods_type"
+                value={field.value ?? ""}
+                onValueChange={(value) => field.onChange(value)}
+                aria-label="Dicitura"
+                className="grid-cols-2"
+                disabled={pending}
+              >
+                {GOODS_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 text-base has-data-checked:border-primary has-data-checked:bg-secondary"
+                  >
+                    <RadioGroupItem value={option.value} ref={field.ref} />
+                    {option.label}
+                  </label>
+                ))}
+              </RadioGroup>
+            )}
+          />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Bolla e allegato">
+        <Field id="delivery_note_number" label="Bolla" icon={FileText} error={errors.delivery_note_number?.message}>
+          <Controller
+            control={control}
+            name="delivery_note_number"
+            render={({ field }) => (
+              <Input
+                id="delivery_note_number"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={30}
+                className="h-11"
+                aria-invalid={Boolean(errors.delivery_note_number)}
+                disabled={pending}
+                ref={field.ref}
+                name={field.name}
+                onBlur={field.onBlur}
+                value={field.value}
+                onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
+              />
+            )}
+          />
+        </Field>
+
+        <Field id="attachment" label="Allegato" icon={Paperclip} error={errors.attachment?.message}>
+          <Controller
+            control={control}
+            name="attachment"
+            render={({ field }) => (
+              <FilePicker
+                id="attachment"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                accept="image/*,application/pdf"
+                emptyLabel="Scatta o scegli un file"
+                existingUrl={trip?.attachment_url}
+                invalid={Boolean(errors.attachment)}
+                disabled={pending}
+              />
+            )}
+          />
+        </Field>
+      </FormSection>
 
       <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva viaggio"} />
     </form>

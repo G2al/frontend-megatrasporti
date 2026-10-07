@@ -4,7 +4,7 @@ import { useMemo, useState, type Ref } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ export function VehicleSelectField({
   const pending = mutation.isPending;
 
   return (
-    <Field id={id} label={label} error={error}>
+    <Field id={id} label={label} icon={Truck} error={error}>
       <div className="space-y-2">
         <SearchableSelect
           id={id}
@@ -116,7 +116,7 @@ export function VehicleSelectField({
         )}
 
         {adding && (
-          <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+          <div className="animate-in fade-in slide-in-from-top-1 space-y-3 rounded-lg border-l-4 border-primary bg-secondary/60 p-3 duration-200">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Nuovo veicolo</p>
               <Button

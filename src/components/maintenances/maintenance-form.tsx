@@ -4,12 +4,14 @@ import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, Euro, FileText, Gauge, Paperclip, Store, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
+import { FormSection } from "@/components/shared/form-section";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
@@ -148,151 +150,159 @@ export function MaintenanceForm({ vehicles, suppliers, maintenance, onSaved }: M
   const lastKm = selectedVehicle?.maintenance_km;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <Field id="date" label="Data e ora" error={errors.date?.message}>
-        <Input
-          id="date"
-          type="datetime-local"
-          className="h-11"
-          aria-invalid={Boolean(errors.date)}
-          disabled={pending}
-          {...register("date")}
-        />
-      </Field>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-7">
+      <FormSection title="Quando e dove">
+        <Field id="date" label="Data e ora" icon={CalendarClock} error={errors.date?.message}>
+          <Input
+            id="date"
+            type="datetime-local"
+            className="h-11"
+            aria-invalid={Boolean(errors.date)}
+            disabled={pending}
+            {...register("date")}
+          />
+        </Field>
 
-      <Field id="supplier_id" label="Fornitore" error={errors.supplier_id?.message}>
+        <Field id="supplier_id" label="Fornitore" icon={Store} error={errors.supplier_id?.message}>
+          <Controller
+            control={control}
+            name="supplier_id"
+            render={({ field }) => (
+              <SearchableSelect
+                id="supplier_id"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                options={supplierOptions}
+                placeholder="Seleziona fornitore"
+                searchPlaceholder="Cerca fornitore"
+                invalid={Boolean(errors.supplier_id)}
+                disabled={pending}
+              />
+            )}
+          />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Veicolo e chilometraggio">
         <Controller
           control={control}
-          name="supplier_id"
+          name="vehicle_id"
           render={({ field }) => (
-            <SearchableSelect
-              id="supplier_id"
+            <VehicleSelectField
+              id="vehicle_id"
+              label="Veicolo"
               ref={field.ref}
               value={field.value}
               onChange={field.onChange}
-              options={supplierOptions}
-              placeholder="Seleziona fornitore"
-              searchPlaceholder="Cerca fornitore"
-              invalid={Boolean(errors.supplier_id)}
+              vehicles={vehicles}
+              error={errors.vehicle_id?.message}
               disabled={pending}
             />
           )}
         />
-      </Field>
 
-      <Controller
-        control={control}
-        name="vehicle_id"
-        render={({ field }) => (
-          <VehicleSelectField
-            id="vehicle_id"
-            label="Veicolo"
-            ref={field.ref}
-            value={field.value}
-            onChange={field.onChange}
-            vehicles={vehicles}
-            error={errors.vehicle_id?.message}
+        <Field id="km" label="Km manutenzione" icon={Gauge} error={errors.km?.message}>
+          <Input
+            id="km"
+            inputMode="numeric"
+            className="h-11"
+            aria-invalid={Boolean(errors.km)}
             disabled={pending}
+            {...register("km")}
           />
-        )}
-      />
+        </Field>
 
-      <Field id="km" label="Km manutenzione" error={errors.km?.message}>
-        <Input
-          id="km"
-          inputMode="numeric"
-          className="h-11"
-          aria-invalid={Boolean(errors.km)}
-          disabled={pending}
-          {...register("km")}
-        />
-      </Field>
-
-      <Field
-        id="km_after"
-        label="Prossima manutenzione (km)"
-        optional
-        error={errors.km_after?.message}
-        hint={lastKm !== null && lastKm !== undefined ? `Ultimi km manutenzione: ${formatNumber(lastKm)}` : undefined}
-      >
-        <Input
+        <Field
           id="km_after"
-          inputMode="numeric"
-          className="h-11"
-          aria-invalid={Boolean(errors.km_after)}
-          disabled={pending}
-          {...register("km_after")}
-        />
-      </Field>
+          label="Prossima manutenzione (km)"
+          icon={Gauge}
+          optional
+          error={errors.km_after?.message}
+          hint={lastKm !== null && lastKm !== undefined ? `Ultimi km manutenzione: ${formatNumber(lastKm)}` : undefined}
+        >
+          <Input
+            id="km_after"
+            inputMode="numeric"
+            className="h-11"
+            aria-invalid={Boolean(errors.km_after)}
+            disabled={pending}
+            {...register("km_after")}
+          />
+        </Field>
 
-      <Field
-        id="next_maintenance_date"
-        label="Prossima manutenzione (data)"
-        optional
-        error={errors.next_maintenance_date?.message}
-      >
-        <Input
+        <Field
           id="next_maintenance_date"
-          type="date"
-          className="h-11"
-          aria-invalid={Boolean(errors.next_maintenance_date)}
-          disabled={pending}
-          {...register("next_maintenance_date")}
-        />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="invoice_number" label="Numero bolla" error={errors.invoice_number?.message}>
+          label="Prossima manutenzione (data)"
+          icon={CalendarClock}
+          optional
+          error={errors.next_maintenance_date?.message}
+        >
           <Input
-            id="invoice_number"
+            id="next_maintenance_date"
+            type="date"
             className="h-11"
-            aria-invalid={Boolean(errors.invoice_number)}
+            aria-invalid={Boolean(errors.next_maintenance_date)}
             disabled={pending}
-            {...register("invoice_number")}
+            {...register("next_maintenance_date")}
           />
         </Field>
-        <Field id="price" label="Prezzo (€)" error={errors.price?.message}>
-          <Input
-            id="price"
-            inputMode="decimal"
-            className="h-11"
-            aria-invalid={Boolean(errors.price)}
-            disabled={pending}
-            {...register("price")}
-          />
-        </Field>
-      </div>
+      </FormSection>
 
-      <Field id="notes" label="Dettagli intervento" error={errors.notes?.message}>
-        <Textarea
-          id="notes"
-          rows={4}
-          className="text-base"
-          aria-invalid={Boolean(errors.notes)}
-          disabled={pending}
-          {...register("notes")}
-        />
-      </Field>
-
-      <Field id="attachment" label="Allegato" error={errors.attachment?.message}>
-        <Controller
-          control={control}
-          name="attachment"
-          render={({ field }) => (
-            <FilePicker
-              id="attachment"
-              ref={field.ref}
-              value={field.value}
-              onChange={field.onChange}
-              accept="image/*,application/pdf"
-              emptyLabel="Scatta o scegli un file"
-              existingUrl={maintenance?.attachment_url}
-              invalid={Boolean(errors.attachment)}
+      <FormSection title="Bolla e intervento">
+        <div className="grid grid-cols-2 gap-3">
+          <Field id="invoice_number" label="Numero bolla" icon={FileText} error={errors.invoice_number?.message}>
+            <Input
+              id="invoice_number"
+              className="h-11"
+              aria-invalid={Boolean(errors.invoice_number)}
               disabled={pending}
+              {...register("invoice_number")}
             />
-          )}
-        />
-      </Field>
+          </Field>
+          <Field id="price" label="Prezzo (€)" icon={Euro} error={errors.price?.message}>
+            <Input
+              id="price"
+              inputMode="decimal"
+              className="h-11"
+              aria-invalid={Boolean(errors.price)}
+              disabled={pending}
+              {...register("price")}
+            />
+          </Field>
+        </div>
+
+        <Field id="notes" label="Dettagli intervento" icon={StickyNote} error={errors.notes?.message}>
+          <Textarea
+            id="notes"
+            rows={4}
+            className="text-base"
+            aria-invalid={Boolean(errors.notes)}
+            disabled={pending}
+            {...register("notes")}
+          />
+        </Field>
+
+        <Field id="attachment" label="Allegato" icon={Paperclip} error={errors.attachment?.message}>
+          <Controller
+            control={control}
+            name="attachment"
+            render={({ field }) => (
+              <FilePicker
+                id="attachment"
+                ref={field.ref}
+                value={field.value}
+                onChange={field.onChange}
+                accept="image/*,application/pdf"
+                emptyLabel="Scatta o scegli un file"
+                existingUrl={maintenance?.attachment_url}
+                invalid={Boolean(errors.attachment)}
+                disabled={pending}
+              />
+            )}
+          />
+        </Field>
+      </FormSection>
 
       <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva manutenzione"} />
     </form>
