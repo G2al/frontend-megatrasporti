@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/shared/field";
-import { InlineSheet } from "@/components/shared/inline-sheet";
+import { MiniFormDialog } from "@/components/shared/mini-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
 import type { Vehicle } from "@/types";
@@ -69,7 +69,7 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
   const pending = mutation.isPending;
 
   return (
-    <InlineSheet
+    <MiniFormDialog
       open={open}
       onOpenChange={(next) => {
         if (!pending) {
@@ -129,6 +129,6 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
           {pending ? "Salvataggio..." : "Aggiungi veicolo"}
         </Button>
       </form>
-    </InlineSheet>
+    </MiniFormDialog>
   );
 }

@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/shared/field";
-import { InlineSheet } from "@/components/shared/inline-sheet";
+import { MiniFormDialog } from "@/components/shared/mini-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
 import type { Station, StationCard } from "@/types";
@@ -72,7 +72,7 @@ export function AddCardDialog({ open, onOpenChange, stationId, stationName, onCr
   const pending = mutation.isPending;
 
   return (
-    <InlineSheet
+    <MiniFormDialog
       open={open}
       onOpenChange={(next) => {
         if (!pending) {
@@ -122,6 +122,6 @@ export function AddCardDialog({ open, onOpenChange, stationId, stationName, onCr
           {pending ? "Salvataggio..." : "Aggiungi carta"}
         </Button>
       </form>
-    </InlineSheet>
+    </MiniFormDialog>
   );
 }
