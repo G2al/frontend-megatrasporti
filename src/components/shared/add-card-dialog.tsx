@@ -98,7 +98,6 @@ export function AddCardDialog({ open, onOpenChange, stationId, stationName, onCr
         <Field id="card-number" label="Numero carta" error={errors.number?.message}>
           <Input
             id="card-number"
-            autoFocus
             className="h-11"
             disabled={pending}
             aria-invalid={Boolean(errors.number)}

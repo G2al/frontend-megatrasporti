@@ -95,7 +95,6 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
         <Field id="vehicle-name" label="Nome / categoria" error={errors.name?.message}>
           <Input
             id="vehicle-name"
-            autoFocus
             placeholder="Es. MOTRICE - FRIGO"
             className="h-11"
             disabled={pending}
