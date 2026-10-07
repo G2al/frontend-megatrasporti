@@ -14,7 +14,6 @@ import { handleSubmitError } from "@/lib/form";
 
 const schema = z
   .object({
-    current_password: z.string().min(1, "Inserisci la password attuale."),
     new_password: z.string().min(5, "La nuova password deve avere almeno 5 caratteri."),
     new_password_confirmation: z.string().min(1, "Conferma la nuova password."),
   })
@@ -40,7 +39,7 @@ export function ChangePasswordForm({ mode, onSuccess }: ChangePasswordFormProps)
     formState: { errors },
   } = useForm<ChangePasswordValues>({
     resolver: zodResolver(schema),
-    defaultValues: { current_password: "", new_password: "", new_password_confirmation: "" },
+    defaultValues: { new_password: "", new_password_confirmation: "" },
   });
 
   const mutation = useMutation({
@@ -65,16 +64,6 @@ export function ChangePasswordForm({ mode, onSuccess }: ChangePasswordFormProps)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <Field id="current_password" label="Password attuale" error={errors.current_password?.message}>
-        <PasswordInput
-          id="current_password"
-          autoComplete="current-password"
-          disabled={pending}
-          aria-invalid={Boolean(errors.current_password)}
-          {...register("current_password")}
-        />
-      </Field>
-
       <Field id="new_password" label="Nuova password" hint="Almeno 5 caratteri" error={errors.new_password?.message}>
         <PasswordInput
           id="new_password"
@@ -99,7 +88,7 @@ export function ChangePasswordForm({ mode, onSuccess }: ChangePasswordFormProps)
         />
       </Field>
 
-      <SubmitButton pending={pending} label="Cambia password" />
+      <SubmitButton pending={pending} label="Invia" />
     </form>
   );
 }
