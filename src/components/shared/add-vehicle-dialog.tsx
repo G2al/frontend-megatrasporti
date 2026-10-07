@@ -7,9 +7,9 @@ import { Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/shared/field";
+import { InlineSheet } from "@/components/shared/inline-sheet";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
 import type { Vehicle } from "@/types";
@@ -69,7 +69,7 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
   const pending = mutation.isPending;
 
   return (
-    <Dialog
+    <InlineSheet
       open={open}
       onOpenChange={(next) => {
         if (!pending) {
@@ -77,68 +77,58 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
           if (!next) reset();
         }
       }}
+      icon={Truck}
+      title="Nuovo veicolo"
+      description="Crea un veicolo e selezionalo subito nel form."
     >
-      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-sm">
-        <form
-          onSubmit={(event) => {
-            // Impedisce che l'invio di questo mini-form risalga, tramite il React
-            // tree del Portal, fino al <form> del rifornimento/manutenzione/viaggio
-            // sottostante e ne attivi la validazione.
-            event.stopPropagation();
-            void handleSubmit(onSubmit)(event);
-          }}
-          noValidate
-          className="space-y-4"
-        >
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Truck className="size-5" aria-hidden />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle>Nuovo veicolo</DialogTitle>
-                <DialogDescription>Crea un veicolo e selezionalo subito nel form.</DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+      <form
+        onSubmit={(event) => {
+          // Impedisce che l'invio di questo mini-form risalga, tramite il React
+          // tree del Portal, fino al <form> del rifornimento/manutenzione/viaggio
+          // sottostante e ne attivi la validazione.
+          event.stopPropagation();
+          void handleSubmit(onSubmit)(event);
+        }}
+        noValidate
+        className="space-y-4"
+      >
+        <Field id="vehicle-name" label="Nome / categoria" error={errors.name?.message}>
+          <Input
+            id="vehicle-name"
+            autoFocus
+            placeholder="Es. MOTRICE - FRIGO"
+            className="h-11"
+            disabled={pending}
+            aria-invalid={Boolean(errors.name)}
+            {...register("name")}
+          />
+        </Field>
 
-          <Field id="vehicle-name" label="Nome / categoria" error={errors.name?.message}>
-            <Input
-              id="vehicle-name"
-              placeholder="Es. MOTRICE - FRIGO"
-              className="h-11"
-              disabled={pending}
-              aria-invalid={Boolean(errors.name)}
-              {...register("name")}
-            />
-          </Field>
+        <Field id="vehicle-plate" label="Targa" error={errors.plate?.message}>
+          <Input
+            id="vehicle-plate"
+            className="h-11"
+            disabled={pending}
+            aria-invalid={Boolean(errors.plate)}
+            {...register("plate")}
+          />
+        </Field>
 
-          <Field id="vehicle-plate" label="Targa" error={errors.plate?.message}>
-            <Input
-              id="vehicle-plate"
-              className="h-11"
-              disabled={pending}
-              aria-invalid={Boolean(errors.plate)}
-              {...register("plate")}
-            />
-          </Field>
+        <Field id="vehicle-color" label="Colore" optional error={errors.color?.message}>
+          <Input
+            id="vehicle-color"
+            className="h-11"
+            disabled={pending}
+            aria-invalid={Boolean(errors.color)}
+            {...register("color")}
+          />
+        </Field>
 
-          <Field id="vehicle-color" label="Colore" optional error={errors.color?.message}>
-            <Input
-              id="vehicle-color"
-              className="h-11"
-              disabled={pending}
-              aria-invalid={Boolean(errors.color)}
-              {...register("color")}
-            />
-          </Field>
-
-          <Button type="submit" disabled={pending} className="h-11 w-full">
-            {pending && <Loader2 className="animate-spin" />}
-            {pending ? "Salvataggio..." : "Aggiungi veicolo"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <Button type="submit" disabled={pending} className="h-11 w-full">
+          {pending && <Loader2 className="animate-spin" />}
+          {pending ? "Salvataggio..." : "Aggiungi veicolo"}
+        </Button>
+      </form>
+    </InlineSheet>
   );
 }

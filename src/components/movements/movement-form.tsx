@@ -304,6 +304,7 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
               open={addCardOpen}
               onOpenChange={setAddCardOpen}
               stationId={station.id}
+              stationName={station.name}
               onCreated={(card) => setValue("station_card_id", String(card.id))}
             />
           )}
