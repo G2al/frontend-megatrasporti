@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -79,10 +79,27 @@ export function AddVehicleDialog({ open, onOpenChange, onCreated }: AddVehicleDi
       }}
     >
       <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-sm">
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            // Impedisce che l'invio di questo mini-form risalga, tramite il React
+            // tree del Portal, fino al <form> del rifornimento/manutenzione/viaggio
+            // sottostante e ne attivi la validazione.
+            event.stopPropagation();
+            void handleSubmit(onSubmit)(event);
+          }}
+          noValidate
+          className="space-y-4"
+        >
           <DialogHeader>
-            <DialogTitle>Nuovo veicolo</DialogTitle>
-            <DialogDescription>Crea un veicolo e selezionalo subito nel form.</DialogDescription>
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Truck className="size-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle>Nuovo veicolo</DialogTitle>
+                <DialogDescription>Crea un veicolo e selezionalo subito nel form.</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
           <Field id="vehicle-name" label="Nome / categoria" error={errors.name?.message}>

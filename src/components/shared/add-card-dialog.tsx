@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { CreditCard, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -81,10 +81,27 @@ export function AddCardDialog({ open, onOpenChange, stationId, onCreated }: AddC
       }}
     >
       <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-sm">
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            // Impedisce che l'invio di questo mini-form risalga, tramite il React
+            // tree del Portal, fino al <form> del rifornimento/manutenzione/viaggio
+            // sottostante e ne attivi la validazione.
+            event.stopPropagation();
+            void handleSubmit(onSubmit)(event);
+          }}
+          noValidate
+          className="space-y-4"
+        >
           <DialogHeader>
-            <DialogTitle>Nuova carta</DialogTitle>
-            <DialogDescription>Aggiungi una carta a questa stazione e selezionala subito.</DialogDescription>
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <CreditCard className="size-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle>Nuova carta</DialogTitle>
+                <DialogDescription>Aggiungi una carta a questa stazione e selezionala subito.</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
           <Field id="card-number" label="Numero carta" error={errors.number?.message}>
