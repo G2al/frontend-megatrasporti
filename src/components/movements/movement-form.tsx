@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ConsumptionBadge } from "@/components/movements/consumption-badge";
-import { AddCardDialog } from "@/components/shared/add-card-dialog";
+import { AddCardInline } from "@/components/shared/add-card-inline";
 import { Field } from "@/components/shared/field";
 import { FilePicker } from "@/components/shared/file-picker";
 import { SearchableSelect } from "@/components/shared/searchable-select";
@@ -87,7 +85,6 @@ interface MovementFormProps {
 export function MovementForm({ vehicles, stations, platforms, movement, onSaved }: MovementFormProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(movement);
-  const [addCardOpen, setAddCardOpen] = useState(false);
 
   const schema = useMemo(() => createSchema(!isEditing), [isEditing]);
 
@@ -288,26 +285,14 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
                 />
               )}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full gap-2"
-              disabled={pending}
-              onClick={() => setAddCardOpen(true)}
-            >
-              <Plus className="size-4" />
-              Aggiungi nuova carta
-            </Button>
+            {station && (
+              <AddCardInline
+                stationId={station.id}
+                stationName={station.name}
+                onCreated={(card) => setValue("station_card_id", String(card.id))}
+              />
+            )}
           </div>
-          {station && (
-            <AddCardDialog
-              open={addCardOpen}
-              onOpenChange={setAddCardOpen}
-              stationId={station.id}
-              stationName={station.name}
-              onCreated={(card) => setValue("station_card_id", String(card.id))}
-            />
-          )}
         </Field>
       )}
 
