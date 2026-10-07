@@ -18,7 +18,7 @@ interface VehicleSelectFieldProps {
   error?: string;
   disabled?: boolean;
   searchPlaceholder?: string;
-  ref?: Ref<HTMLSelectElement>;
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function VehicleSelectField({

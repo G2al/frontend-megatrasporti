@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo, useState, type Ref } from "react";
-import { ChevronDown, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { useMemo, type Ref } from "react";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 export interface SelectOption {
   value: string;
@@ -21,7 +26,7 @@ interface SearchableSelectProps {
   searchable?: boolean;
   invalid?: boolean;
   disabled?: boolean;
-  ref?: Ref<HTMLSelectElement>;
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function SearchableSelect({
@@ -36,63 +41,43 @@ export function SearchableSelect({
   disabled,
   ref,
 }: SearchableSelectProps) {
-  const [query, setQuery] = useState("");
-
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return options;
-    return options.filter(
-      (option) =>
-        option.value === value ||
-        `${option.label} ${option.keywords ?? ""}`.toLowerCase().includes(needle),
-    );
-  }, [options, query, value]);
+  const selected = useMemo(() => options.find((option) => option.value === value) ?? null, [options, value]);
 
   return (
-    <div className="space-y-2">
-      {searchable && (
-        <div className="relative">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            disabled={disabled}
-            className="h-11 pl-9"
-          />
-        </div>
-      )}
-      <div className="relative">
-        <select
-          id={id}
-          ref={ref}
-          value={value}
-          disabled={disabled}
-          aria-invalid={invalid || undefined}
-          onChange={(event) => onChange(event.target.value)}
-          className={cn(
-            "h-11 w-full appearance-none truncate rounded-lg border border-input bg-background pr-10 pl-3 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-            invalid && "border-destructive ring-3 ring-destructive/20",
-            !value && "text-muted-foreground",
-          )}
-        >
-          <option value="">{placeholder}</option>
-          {visible.map((option) => (
-            <option key={option.value} value={option.value} className="text-foreground">
+    <Combobox
+      items={options}
+      value={selected}
+      onValueChange={(option) => onChange(option ? option.value : "")}
+      itemToStringLabel={(option) => option?.label ?? ""}
+      isItemEqualToValue={(a, b) => a?.value === b?.value}
+      filter={
+        searchable
+          ? (option: SelectOption, query) =>
+              `${option.label} ${option.keywords ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())
+          : null
+      }
+    >
+      <ComboboxInput
+        id={id}
+        ref={ref}
+        readOnly={!searchable}
+        placeholder={searchable ? searchPlaceholder : placeholder}
+        aria-label={searchable ? searchPlaceholder : placeholder}
+        aria-invalid={invalid || undefined}
+        disabled={disabled}
+        showClear={Boolean(value)}
+        className="h-11 w-full text-base [&_input]:h-11 [&_input]:text-base"
+      />
+      <ComboboxContent>
+        <ComboboxList>
+          {(option: SelectOption) => (
+            <ComboboxItem key={option.value} value={option} className="min-h-11 py-2.5">
               {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-      </div>
-    </div>
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+        <ComboboxEmpty>Nessun risultato.</ComboboxEmpty>
+      </ComboboxContent>
+    </Combobox>
   );
 }
