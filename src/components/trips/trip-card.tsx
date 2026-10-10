@@ -1,6 +1,6 @@
 import { Fragment } from "react";
-import { ArrowRight, FileText, Layers, Pencil, Truck, User, Warehouse } from "lucide-react";
-import { AttachmentLink } from "@/components/shared/attachment-link";
+import { ArrowRight, FileText, Layers, Paperclip, Pencil, Truck, User, Warehouse } from "lucide-react";
+import { AttachmentThumb } from "@/components/shared/attachment-thumb";
 import { authorTitle } from "@/components/shared/author-line";
 import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
@@ -70,14 +70,28 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
         <InfoItem icon={Warehouse} text={trip.platform?.name ?? "—"} className="col-span-2" />
       </div>
 
-      <footer className="flex items-center justify-between gap-3 border-t pt-3">
-        <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate" title={authorTitle(trip.user)}>
-            {authorTitle(trip.user)}
-          </span>
-        </p>
-        <AttachmentLink href={trip.attachment_url} label="Allegato" />
+      <footer className="space-y-2 border-t pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate" title={authorTitle(trip.user)}>
+              {authorTitle(trip.user)}
+            </span>
+          </p>
+          {trip.attachments.length > 0 && (
+            <p className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Paperclip className="size-3.5 shrink-0" aria-hidden />
+              {trip.attachments.length === 1 ? "1 allegato" : `${trip.attachments.length} allegati`}
+            </p>
+          )}
+        </div>
+        {trip.attachments.length > 0 && (
+          <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1">
+            {trip.attachments.map((attachment, index) => (
+              <AttachmentThumb key={attachment.id} src={attachment.url} label={`Apri allegato ${index + 1}`} />
+            ))}
+          </div>
+        )}
       </footer>
     </article>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Field } from "@/components/shared/field";
-import { FilePicker } from "@/components/shared/file-picker";
 import { FormSection } from "@/components/shared/form-section";
+import { MultiFilePicker } from "@/components/shared/multi-file-picker";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
@@ -22,27 +22,23 @@ import { handleSubmitError } from "@/lib/form";
 import { nowInputValue, toInputDateTime } from "@/lib/format";
 import type { GoodsType, Platform, Trip, Vehicle } from "@/types";
 
-function createSchema(requireAttachment: boolean) {
-  return z.object({
-    date: z.string().min(1, "Inserisci data e ora."),
-    platform_id: z.string().min(1, "Seleziona una piattaforma."),
-    vehicle_id: z.string().min(1, "Seleziona una targa."),
-    destinations: z
-      .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
-      .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
-    goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
-    delivery_note_number: z
-      .string()
-      .min(1, "Inserisci il numero di bolla.")
-      .regex(/^\d+$/, "La bolla deve contenere solo cifre.")
-      .max(30, "Massimo 30 cifre."),
-    attachment: requireAttachment
-      ? z.instanceof(File, { message: "L'allegato è obbligatorio." })
-      : z.instanceof(File).optional(),
-  });
-}
+const schema = z.object({
+  date: z.string().min(1, "Inserisci data e ora."),
+  platform_id: z.string().min(1, "Seleziona una piattaforma."),
+  vehicle_id: z.string().min(1, "Seleziona una targa."),
+  destinations: z
+    .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
+    .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
+  goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
+  delivery_note_number: z
+    .string()
+    .min(1, "Inserisci il numero di bolla.")
+    .regex(/^[0-9-]+$/, "La bolla può contenere solo cifre e trattini.")
+    .max(30, "Massimo 30 caratteri."),
+  attachments: z.array(z.instanceof(File)),
+});
 
-type TripValues = z.infer<ReturnType<typeof createSchema>>;
+type TripValues = z.infer<typeof schema>;
 
 const GOODS_OPTIONS: Array<{ value: GoodsType; label: string }> = [
   { value: "secco", label: "Secco" },
@@ -59,7 +55,7 @@ interface TripFormProps {
 export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(trip);
-  const schema = useMemo(() => createSchema(!isEditing), [isEditing]);
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState<number[]>([]);
 
   const initialVehicle = useMemo(() => {
     if (trip) return String(trip.vehicle?.id ?? "");
@@ -82,7 +78,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
       destinations: trip && trip.destinations.length > 0 ? trip.destinations.map((value) => ({ value })) : [{ value: "" }],
       goods_type: trip?.goods_type,
       delivery_note_number: trip?.delivery_note_number ?? "",
-      attachment: undefined,
+      attachments: [],
     },
   });
 
@@ -91,6 +87,11 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
   const platformOptions = useMemo(
     () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
     [platforms],
+  );
+
+  const remainingExisting = useMemo(
+    () => (trip?.attachments ?? []).filter((item) => !removedAttachmentIds.includes(item.id)),
+    [trip, removedAttachmentIds],
   );
 
   const mutation = useMutation({
@@ -107,6 +108,15 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
   });
 
   async function onSubmit(values: TripValues) {
+    if (!isEditing && values.attachments.length === 0) {
+      setError("attachments", { type: "manual", message: "Allega almeno un file." });
+      return;
+    }
+    if (isEditing && remainingExisting.length === 0 && values.attachments.length === 0) {
+      setError("attachments", { type: "manual", message: "Deve restare almeno un allegato." });
+      return;
+    }
+
     const data = new FormData();
     data.append("date", values.date);
     data.append("platform_id", values.platform_id);
@@ -117,7 +127,10 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
       .forEach((value) => data.append("destinations[]", value));
     if (values.goods_type) data.append("goods_type", values.goods_type);
     data.append("delivery_note_number", values.delivery_note_number);
-    if (values.attachment) data.append("attachment", values.attachment);
+    values.attachments.forEach((file) => data.append("attachments[]", file));
+    if (isEditing) {
+      removedAttachmentIds.forEach((id) => data.append("remove_attachment_ids[]", String(id)));
+    }
 
     try {
       await mutation.mutateAsync(data);
@@ -260,7 +273,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
         </Field>
       </FormSection>
 
-      <FormSection title="Bolla e allegato">
+      <FormSection title="Bolla e allegati">
         <Field id="delivery_note_number" label="Bolla" icon={FileText} error={errors.delivery_note_number?.message}>
           <Controller
             control={control}
@@ -268,8 +281,8 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             render={({ field }) => (
               <Input
                 id="delivery_note_number"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                inputMode="text"
+                pattern="[0-9-]*"
                 maxLength={30}
                 className="h-11"
                 aria-invalid={Boolean(errors.delivery_note_number)}
@@ -278,26 +291,27 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
                 name={field.name}
                 onBlur={field.onBlur}
                 value={field.value}
-                onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
+                onChange={(event) => field.onChange(event.target.value.replace(/[^0-9-]/g, ""))}
               />
             )}
           />
         </Field>
 
-        <Field id="attachment" label="Allegato" icon={Paperclip} error={errors.attachment?.message}>
+        <Field id="attachments" label="Allegati" icon={Paperclip} error={errors.attachments?.message}>
           <Controller
             control={control}
-            name="attachment"
+            name="attachments"
             render={({ field }) => (
-              <FilePicker
-                id="attachment"
+              <MultiFilePicker
+                id="attachments"
                 ref={field.ref}
-                value={field.value}
-                onChange={field.onChange}
+                files={field.value}
+                onFilesChange={field.onChange}
+                existing={remainingExisting}
+                onRemoveExisting={(id) => setRemovedAttachmentIds((current) => [...current, id])}
                 accept="image/*,application/pdf"
-                emptyLabel="Scatta o scegli un file"
-                existingUrl={trip?.attachment_url}
-                invalid={Boolean(errors.attachment)}
+                emptyLabel="Scatta o scegli uno o più file"
+                invalid={Boolean(errors.attachments)}
                 disabled={pending}
               />
             )}

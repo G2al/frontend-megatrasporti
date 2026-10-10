@@ -91,13 +91,19 @@ export interface Maintenance {
 
 export type GoodsType = "secco" | "freschi";
 
+export interface TripAttachment {
+  id: number;
+  path?: string;
+  url: string;
+}
+
 export interface Trip {
   id: number;
   date: string;
   destinations: string[];
   goods_type: GoodsType;
   delivery_note_number: string;
-  attachment_url: string | null;
+  attachments: TripAttachment[];
   is_certified: boolean;
   platform: Platform | null;
   vehicle: Vehicle | null;
