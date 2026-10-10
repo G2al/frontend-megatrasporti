@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, FileText, Layers, MapPin, Paperclip, Plus, Trash2, Warehouse } from "lucide-react";
@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Field } from "@/components/shared/field";
 import { FormSection } from "@/components/shared/form-section";
 import { MultiFilePicker } from "@/components/shared/multi-file-picker";
+import { DistanceCalculator } from "@/components/trips/distance-calculator";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
@@ -83,6 +84,11 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "destinations" });
+
+  const [watchedPlatformId, watchedDestinations] = useWatch({
+    control,
+    name: ["platform_id", "destinations"],
+  });
 
   const platformOptions = useMemo(
     () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
@@ -243,6 +249,12 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             <Plus />
             Aggiungi destinazione
           </Button>
+
+          <DistanceCalculator
+            platformId={watchedPlatformId}
+            destinations={watchedDestinations.map((item) => item.value)}
+            disabled={pending}
+          />
         </fieldset>
 
         <Field id="goods_type" label="Dicitura" icon={Layers} error={errors.goods_type?.message}>

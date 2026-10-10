@@ -3,6 +3,7 @@ import { ArrowRight, FileText, Layers, Paperclip, Pencil, Truck, User, Warehouse
 import { AttachmentThumb } from "@/components/shared/attachment-thumb";
 import { authorTitle } from "@/components/shared/author-line";
 import { Button } from "@/components/ui/button";
+import { DistanceResult } from "@/components/trips/distance-result";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,14 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
         <InfoItem icon={Truck} text={trip.vehicle?.plate ?? "—"} />
         <InfoItem icon={Layers} text={GOODS_LABELS[trip.goods_type] ?? trip.goods_type} />
         <InfoItem icon={Warehouse} text={trip.platform?.name ?? "—"} className="col-span-2" />
+        {trip.distance_status && (
+          <DistanceResult
+            status={trip.distance_status}
+            km={trip.distance_km}
+            note={trip.distance_note}
+            className="col-span-2"
+          />
+        )}
       </div>
 
       <footer className="space-y-2 border-t pt-3">

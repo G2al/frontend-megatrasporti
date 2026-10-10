@@ -97,6 +97,8 @@ export interface TripAttachment {
   url: string;
 }
 
+export type DistanceStatus = "calculated" | "estimated" | "unavailable";
+
 export interface Trip {
   id: number;
   date: string;
@@ -105,6 +107,10 @@ export interface Trip {
   delivery_note_number: string;
   attachments: TripAttachment[];
   is_certified: boolean;
+  distance_km: number | string | null;
+  distance_status: DistanceStatus | null;
+  distance_note: string | null;
+  distance_calculated_at: string | null;
   platform: Platform | null;
   vehicle: Vehicle | null;
   user: Author | null;
