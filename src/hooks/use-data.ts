@@ -17,12 +17,13 @@ import type {
 type ListResponse<T> = T[] | { data: T[] };
 
 const REFERENCE_STALE_MS = 5 * 60 * 1000;
+const LIST_STALE_MS = 20 * 1000;
 
 function useList<T>(key: string, path: string, referenceData = false) {
   return useQuery({
     queryKey: [key],
     queryFn: async () => unwrapList(await apiFetch<ListResponse<T>>(path, { query: { per_page: "all" } })),
-    staleTime: referenceData ? REFERENCE_STALE_MS : 0,
+    staleTime: referenceData ? REFERENCE_STALE_MS : LIST_STALE_MS,
   });
 }
 
