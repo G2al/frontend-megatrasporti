@@ -9,6 +9,21 @@ export interface User {
   email: string | null;
   role: Role;
   must_change_password: boolean;
+  is_approved: boolean;
+}
+
+export interface VerificationStatus {
+  is_approved: boolean;
+  must_change_password: boolean;
+  address: string | null;
+  identity_front_url: string | null;
+  identity_back_url: string | null;
+  identity_expiry_date: string | null;
+  license_url: string | null;
+  license_expiry_date: string | null;
+  cqc_url: string | null;
+  cqc_expiry_date: string | null;
+  completed_at: string | null;
 }
 
 export interface Vehicle {

@@ -1,4 +1,4 @@
-import { clearSession, getToken } from "@/lib/auth";
+import { clearSession, getToken, updateStoredUser } from "@/lib/auth";
 
 const BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -31,6 +31,9 @@ interface RequestOptions {
 interface ErrorPayload {
   message?: string;
   errors?: Record<string, string[]>;
+  onboarding_required?: boolean;
+  is_approved?: boolean;
+  must_change_password?: boolean;
 }
 
 function buildUrl(path: string, query?: Query): string {
@@ -87,6 +90,16 @@ async function request(path: string, options: RequestOptions): Promise<Response>
   }
 
   if (response.status === 401 && token) clearSession();
+
+  if (response.status === 403 && payload.onboarding_required) {
+    // L'utente deve completare la verifica e/o cambiare password: non si
+    // chiude la sessione, si aggiorna solo lo stato locale così il gate di
+    // onboarding scatta automaticamente ovunque nell'app.
+    updateStoredUser({
+      is_approved: payload.is_approved ?? false,
+      must_change_password: payload.must_change_password ?? false,
+    });
+  }
 
   const fallback =
     response.status === 401

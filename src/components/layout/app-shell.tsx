@@ -17,6 +17,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ProfileDialog } from "@/components/profile/profile-dialog";
 import { PasswordGate } from "@/components/profile/password-gate";
+import { VerificationGate } from "@/components/profile/verification-gate";
 import { useAuth } from "@/hooks/use-auth";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -42,6 +43,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Skeleton className="h-40 w-full" />
       </div>
     );
+  }
+
+  if (user?.is_approved === false) {
+    return <VerificationGate />;
   }
 
   if (user?.must_change_password) {
