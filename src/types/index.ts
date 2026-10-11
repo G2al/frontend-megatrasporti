@@ -99,6 +99,13 @@ export interface TripAttachment {
 
 export type DistanceStatus = "calculated" | "estimated" | "unavailable";
 
+export type DistanceErrorCode =
+  | "platform_missing_address"
+  | "platform_geocoding_failed"
+  | "destination_not_found"
+  | "service_unavailable"
+  | "unknown";
+
 export interface Trip {
   id: number;
   date: string;
@@ -110,6 +117,8 @@ export interface Trip {
   distance_km: number | string | null;
   distance_status: DistanceStatus | null;
   distance_note: string | null;
+  distance_error_code: DistanceErrorCode | null;
+  distance_error_destination: string | null;
   distance_calculated_at: string | null;
   platform: Platform | null;
   vehicle: Vehicle | null;

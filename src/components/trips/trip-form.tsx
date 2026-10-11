@@ -20,6 +20,7 @@ import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
+import { cn } from "@/lib/utils";
 import { nowInputValue, toInputDateTime } from "@/lib/format";
 import type { GoodsType, Platform, Trip, Vehicle } from "@/types";
 
@@ -89,6 +90,14 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     control,
     name: ["platform_id", "destinations"],
   });
+
+  const [invalidDestination, setInvalidDestination] = useState<string | null>(null);
+  const destinationsKey = `${watchedPlatformId}|${watchedDestinations.map((item) => item.value).join("|")}`;
+  const [previousDestinationsKey, setPreviousDestinationsKey] = useState(destinationsKey);
+  if (destinationsKey !== previousDestinationsKey) {
+    setPreviousDestinationsKey(destinationsKey);
+    setInvalidDestination(null);
+  }
 
   const platformOptions = useMemo(
     () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
@@ -209,31 +218,43 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
             Destinazioni
           </legend>
-          {fields.map((item, index) => (
-            <div key={item.id} className="flex items-center gap-2">
-              <Input
-                aria-label={`Destinazione ${index + 1}`}
-                placeholder={`Destinazione ${index + 1}`}
-                maxLength={255}
-                className="flex h-11 items-center py-0 leading-normal"
-                disabled={pending}
-                aria-invalid={Boolean(errors.destinations?.[index]?.value)}
-                {...register(`destinations.${index}.value`)}
-              />
-              {fields.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="size-11 shrink-0"
-                  aria-label={`Rimuovi destinazione ${index + 1}`}
-                  disabled={pending}
-                  onClick={() => remove(index)}
-                >
-                  <Trash2 />
-                </Button>
-              )}
-            </div>
-          ))}
+          {fields.map((item, index) => {
+            const isInvalidDestination =
+              invalidDestination !== null &&
+              watchedDestinations[index]?.value.trim().toLowerCase() === invalidDestination.trim().toLowerCase();
+            return (
+              <div key={item.id} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Input
+                    aria-label={`Destinazione ${index + 1}`}
+                    placeholder={`Destinazione ${index + 1}`}
+                    maxLength={255}
+                    className={cn("flex h-11 items-center py-0 leading-normal", isInvalidDestination && "border-destructive")}
+                    disabled={pending}
+                    aria-invalid={Boolean(errors.destinations?.[index]?.value) || isInvalidDestination}
+                    {...register(`destinations.${index}.value`)}
+                  />
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="size-11 shrink-0"
+                      aria-label={`Rimuovi destinazione ${index + 1}`}
+                      disabled={pending}
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  )}
+                </div>
+                {isInvalidDestination && (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    Destinazione non trovata.
+                  </p>
+                )}
+              </div>
+            );
+          })}
           {destinationsError && (
             <p role="alert" className="text-sm font-medium text-destructive">
               {destinationsError}
@@ -254,6 +275,11 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             platformId={watchedPlatformId}
             destinations={watchedDestinations.map((item) => item.value)}
             disabled={pending}
+            onResult={(result) =>
+              setInvalidDestination(
+                result?.distance_error_code === "destination_not_found" ? result.distance_error_destination : null,
+              )
+            }
           />
         </fieldset>
 
