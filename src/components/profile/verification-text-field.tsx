@@ -60,16 +60,15 @@ export function VerificationTextField({
 
   function handleChange(nextValue: string) {
     setDraft(nextValue);
-    if (type === "date") {
-      if (DATE_PATTERN.test(nextValue) && nextValue !== value) void save(nextValue);
-    }
   }
 
   function handleBlur() {
-    if (type === "text") {
-      const trimmed = draft.trim();
-      if (trimmed !== "" && trimmed !== value) void save(trimmed);
+    if (type === "date") {
+      if (DATE_PATTERN.test(draft) && draft !== value) void save(draft);
+      return;
     }
+    const trimmed = draft.trim();
+    if (trimmed !== "" && trimmed !== value) void save(trimmed);
   }
 
   const done = Boolean(value) && !saving;
