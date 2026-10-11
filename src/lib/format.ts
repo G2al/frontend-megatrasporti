@@ -58,6 +58,16 @@ export function toInputDate(value: string | null | undefined): string {
   return isValid(date) ? format(date, "yyyy-MM-dd") : "";
 }
 
+export function formatMonthLabel(monthKey: string): string {
+  const date = parseISO(`${monthKey}-01`);
+  return isValid(date) ? format(date, "LLLL yyyy", { locale: it }) : monthKey;
+}
+
+export function formatDayLabel(dateValue: string): string {
+  const date = parseISO(dateValue);
+  return isValid(date) ? format(date, "EEEE d MMMM", { locale: it }) : dateValue;
+}
+
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes === null || bytes === undefined) return "—";
   if (bytes < 1024 * 1024) return `${numberFormatter.format(Math.max(bytes, 1) / 1024)} KB`;

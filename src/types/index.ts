@@ -150,3 +150,23 @@ export interface KmStartResponse {
   km_start: number | null;
   source: string | null;
 }
+
+export interface TripSchedulePlatformTotal {
+  platform: string;
+  total: number;
+}
+
+export interface TripScheduleDay {
+  day: number;
+  date: string;
+  total: number | null;
+  trips: Trip[];
+}
+
+export interface TripSchedule {
+  month: string;
+  total_trips: number;
+  month_total: number | null;
+  platform_totals: TripSchedulePlatformTotal[] | null;
+  days: TripScheduleDay[];
+}

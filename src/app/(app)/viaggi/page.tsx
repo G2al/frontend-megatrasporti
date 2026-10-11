@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Truck } from "lucide-react";
+import Link from "next/link";
+import { CalendarRange, Truck } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { ListSkeleton } from "@/components/shared/list-states";
+import { cn } from "@/lib/utils";
 import { ListToolbar } from "@/components/shared/list-toolbar";
 import { RecordList } from "@/components/shared/record-list";
 import { RecordSheet } from "@/components/shared/record-sheet";
@@ -75,6 +78,11 @@ export default function TripsPage() {
         vehicleFilter={vehicleFilter}
         onVehicleFilterChange={setVehicleFilter}
       />
+
+      <Link href="/viaggi/scheda" className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full gap-2")}>
+        <CalendarRange className="size-4" />
+        Scheda mensile
+      </Link>
 
       <RecordList
         items={filtered}

@@ -11,6 +11,7 @@ import type {
   Station,
   Supplier,
   Trip,
+  TripSchedule,
   Vehicle,
 } from "@/types";
 
@@ -59,6 +60,14 @@ export function useDocuments() {
   return useQuery({
     queryKey: ["documents"],
     queryFn: async () => unwrapList(await apiFetch<ListResponse<DocumentFolder>>("/documents")),
+  });
+}
+
+export function useTripSchedule(month: string) {
+  return useQuery({
+    queryKey: ["trips-schedule", month],
+    queryFn: () => apiFetch<TripSchedule>("/trips/schedule", { query: { month } }),
+    staleTime: LIST_STALE_MS,
   });
 }
 
