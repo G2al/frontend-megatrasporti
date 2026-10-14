@@ -15,6 +15,7 @@ interface DistanceResultProps {
 const ERROR_COPY: Record<DistanceErrorCode, { icon: typeof MapPinOff; title: (destination?: string | null) => string }> = {
   platform_missing_address: { icon: Warehouse, title: () => "Piattaforma senza indirizzo" },
   platform_geocoding_failed: { icon: Warehouse, title: () => "Indirizzo piattaforma non valido" },
+  platform_address_required: { icon: Warehouse, title: () => "Seleziona l'indirizzo della piattaforma" },
   destination_not_found: {
     icon: MapPinOff,
     title: (destination) => (destination ? `Destinazione non trovata: «${destination}»` : "Destinazione non trovata"),

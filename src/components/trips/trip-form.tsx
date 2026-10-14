@@ -27,6 +27,7 @@ import type { GoodsType, Platform, Trip, Vehicle } from "@/types";
 const schema = z.object({
   date: z.string().min(1, "Inserisci data e ora."),
   platform_id: z.string().min(1, "Seleziona una piattaforma."),
+  platform_address_id: z.string(),
   vehicle_id: z.string().min(1, "Seleziona una targa."),
   destinations: z
     .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
@@ -70,12 +71,14 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     control,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<TripValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: trip ? toInputDateTime(trip.date) : nowInputValue(),
       platform_id: trip ? String(trip.platform?.id ?? "") : "",
+      platform_address_id: trip ? String(trip.platform_address?.id ?? "") : "",
       vehicle_id: initialVehicle,
       destinations: trip && trip.destinations.length > 0 ? trip.destinations.map((value) => ({ value })) : [{ value: "" }],
       goods_type: trip?.goods_type,
@@ -86,10 +89,21 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
 
   const { fields, append, remove } = useFieldArray({ control, name: "destinations" });
 
-  const [watchedPlatformId, watchedDestinations] = useWatch({
+  const [watchedPlatformId, watchedPlatformAddressId, watchedDestinations] = useWatch({
     control,
-    name: ["platform_id", "destinations"],
+    name: ["platform_id", "platform_address_id", "destinations"],
   });
+
+  const selectedPlatform = useMemo(
+    () => platforms.find((platform) => String(platform.id) === watchedPlatformId),
+    [platforms, watchedPlatformId],
+  );
+  const platformAddresses = useMemo(() => selectedPlatform?.addresses ?? [], [selectedPlatform]);
+  const needsAddressChoice = platformAddresses.length >= 2;
+  const platformAddressOptions = useMemo(
+    () => platformAddresses.map((address) => ({ value: String(address.id), label: address.address })),
+    [platformAddresses],
+  );
 
   const [invalidDestination, setInvalidDestination] = useState<string | null>(null);
   const destinationsKey = `${watchedPlatformId}|${watchedDestinations.map((item) => item.value).join("|")}`;
@@ -123,6 +137,10 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
   });
 
   async function onSubmit(values: TripValues) {
+    if (needsAddressChoice && values.platform_address_id === "") {
+      setError("platform_address_id", { type: "manual", message: "Seleziona l'indirizzo della piattaforma." });
+      return;
+    }
     if (!isEditing && values.attachments.length === 0) {
       setError("attachments", { type: "manual", message: "Allega almeno un file." });
       return;
@@ -135,6 +153,9 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     const data = new FormData();
     data.append("date", values.date);
     data.append("platform_id", values.platform_id);
+    if (needsAddressChoice && values.platform_address_id) {
+      data.append("platform_address_id", values.platform_address_id);
+    }
     data.append("vehicle_id", values.vehicle_id);
     values.destinations
       .map((item) => item.value.trim())
@@ -183,7 +204,10 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
                 id="platform_id"
                 ref={field.ref}
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(value) => {
+                  field.onChange(value);
+                  setValue("platform_address_id", "");
+                }}
                 options={platformOptions}
                 placeholder="Seleziona piattaforma"
                 searchPlaceholder="Cerca piattaforma"
@@ -193,6 +217,35 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             )}
           />
         </Field>
+
+        {platformAddresses.length === 1 && (
+          <p className="flex items-center gap-1.5 pl-0.5 text-sm text-muted-foreground">
+            <MapPin className="size-4 shrink-0" aria-hidden />
+            {platformAddresses[0].address}
+          </p>
+        )}
+
+        {needsAddressChoice && (
+          <Field id="platform_address_id" label="Indirizzo piattaforma" icon={MapPin} error={errors.platform_address_id?.message}>
+            <Controller
+              control={control}
+              name="platform_address_id"
+              render={({ field }) => (
+                <SearchableSelect
+                  id="platform_address_id"
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={platformAddressOptions}
+                  placeholder="Seleziona indirizzo"
+                  searchPlaceholder="Cerca indirizzo"
+                  invalid={Boolean(errors.platform_address_id)}
+                  disabled={pending}
+                />
+              )}
+            />
+          </Field>
+        )}
 
         <Controller
           control={control}
@@ -273,6 +326,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
 
           <DistanceCalculator
             platformId={watchedPlatformId}
+            platformAddressId={needsAddressChoice ? watchedPlatformAddressId : ""}
             destinations={watchedDestinations.map((item) => item.value)}
             disabled={pending}
             onResult={(result) =>

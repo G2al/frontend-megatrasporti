@@ -25,6 +25,7 @@ type PreviewState =
 
 interface DistanceCalculatorProps {
   platformId: string;
+  platformAddressId?: string;
   destinations: string[];
   disabled?: boolean;
   onResult?: (result: CalculateResponse | null) => void;
@@ -44,14 +45,20 @@ function useFakeProgress(active: boolean): [number, () => void] {
   return [progress, () => setProgress(0)];
 }
 
-export function DistanceCalculator({ platformId, destinations, disabled, onResult }: DistanceCalculatorProps) {
+export function DistanceCalculator({
+  platformId,
+  platformAddressId,
+  destinations,
+  disabled,
+  onResult,
+}: DistanceCalculatorProps) {
   const [state, setState] = useState<PreviewState>({ kind: "idle" });
   const requestKey = useRef<string>("");
   const [progress, resetProgress] = useFakeProgress(state.kind === "loading");
 
   const cleanDestinations = destinations.map((value) => value.trim()).filter(Boolean);
   const canCalculate = Boolean(platformId) && cleanDestinations.length > 0;
-  const currentKey = `${platformId}|${cleanDestinations.join("|")}`;
+  const currentKey = `${platformId}|${platformAddressId ?? ""}|${cleanDestinations.join("|")}`;
 
   useEffect(() => {
     if (state.kind !== "idle" && (!canCalculate || requestKey.current !== currentKey)) {
@@ -80,7 +87,11 @@ export function DistanceCalculator({ platformId, destinations, disabled, onResul
     try {
       const result = await apiFetch<CalculateResponse>("/trips/calculate-distance", {
         method: "POST",
-        body: { platform_id: Number(platformId), destinations: cleanDestinations },
+        body: {
+          platform_id: Number(platformId),
+          ...(platformAddressId ? { platform_address_id: Number(platformAddressId) } : {}),
+          destinations: cleanDestinations,
+        },
       });
       onResult?.(result);
       if (result.distance_status === "unavailable") {

@@ -68,7 +68,11 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
         <InfoItem icon={Truck} text={trip.vehicle?.plate ?? "—"} />
         <InfoItem icon={Layers} text={GOODS_LABELS[trip.goods_type] ?? trip.goods_type} />
-        <InfoItem icon={Warehouse} text={trip.platform?.name ?? "—"} className="col-span-2" />
+        <InfoItem
+          icon={Warehouse}
+          text={trip.platform_address ? `${trip.platform?.name ?? "—"} · ${trip.platform_address.address}` : (trip.platform?.name ?? "—")}
+          className="col-span-2"
+        />
         {trip.distance_status && (
           <DistanceResult
             status={trip.distance_status}

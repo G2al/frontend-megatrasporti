@@ -59,9 +59,15 @@ export interface Supplier {
   email: string | null;
 }
 
+export interface PlatformAddress {
+  id: number;
+  address: string;
+}
+
 export interface Platform {
   id: number;
   name: string;
+  addresses: PlatformAddress[];
 }
 
 export interface Author {
@@ -117,6 +123,7 @@ export type DistanceStatus = "calculated" | "estimated" | "unavailable";
 export type DistanceErrorCode =
   | "platform_missing_address"
   | "platform_geocoding_failed"
+  | "platform_address_required"
   | "destination_not_found"
   | "service_unavailable"
   | "unknown";
@@ -136,6 +143,7 @@ export interface Trip {
   distance_error_destination: string | null;
   distance_calculated_at: string | null;
   platform: Platform | null;
+  platform_address: PlatformAddress | null;
   vehicle: Vehicle | null;
   user: Author | null;
 }
