@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, KeyRound, UserRound } from "lucide-react";
+import { ArrowLeft, FileCheck, KeyRound, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
+import { VerificationFields } from "@/components/profile/verification-fields";
+import { ListSkeleton } from "@/components/shared/list-states";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubmitVerificationField, useVerificationStatus } from "@/hooks/use-verification";
 
 const ROLE_LABELS: Record<string, string> = {
   worker: "Operaio",
@@ -19,7 +22,9 @@ interface ProfileDialogProps {
 
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { user } = useAuth();
-  const [view, setView] = useState<"info" | "password">("info");
+  const [view, setView] = useState<"info" | "password" | "documents">("info");
+  const verificationStatus = useVerificationStatus(open && view === "documents");
+  const submitVerificationField = useSubmitVerificationField();
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next);
@@ -49,8 +54,12 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
               <KeyRound className="size-4" />
               Cambia password
             </Button>
+            <Button variant="outline" className="h-11 w-full gap-2" onClick={() => setView("documents")}>
+              <FileCheck className="size-4" />
+              I miei documenti
+            </Button>
           </>
-        ) : (
+        ) : view === "password" ? (
           <>
             <DialogHeader>
               <Button
@@ -66,6 +75,28 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
               <DialogDescription>Inserisci la password attuale e quella nuova.</DialogDescription>
             </DialogHeader>
             <ChangePasswordForm mode="voluntary" onSuccess={() => setView("info")} />
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <Button
+                type="button"
+                variant="ghost"
+                className="-ml-2 h-9 w-fit gap-1.5 px-2 text-sm"
+                onClick={() => setView("info")}
+              >
+                <ArrowLeft className="size-4" />
+                Profilo
+              </Button>
+              <DialogTitle>I miei documenti</DialogTitle>
+              <DialogDescription>Aggiorna i documenti e le scadenze quando serve.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[65dvh] overflow-y-auto pr-0.5">
+              {verificationStatus.isPending && <ListSkeleton count={3} />}
+              {verificationStatus.data && (
+                <VerificationFields status={verificationStatus.data} onSubmit={submitVerificationField} showExpiryStatus />
+              )}
+            </div>
           </>
         )}
       </DialogContent>

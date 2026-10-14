@@ -20,9 +20,14 @@ export interface VerificationStatus {
   identity_back_url: string | null;
   identity_expiry_date: string | null;
   license_url: string | null;
+  license_back_url: string | null;
   license_expiry_date: string | null;
   cqc_url: string | null;
+  cqc_back_url: string | null;
   cqc_expiry_date: string | null;
+  tachograph_front_url: string | null;
+  tachograph_back_url: string | null;
+  tachograph_expiry_date: string | null;
   completed_at: string | null;
 }
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Field } from "@/components/shared/field";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { expiryStatus } from "@/lib/verification";
 import type { VerificationStatus } from "@/types";
 
 interface VerificationTextFieldProps {
@@ -18,6 +19,7 @@ interface VerificationTextFieldProps {
   onSubmit: (data: FormData) => Promise<VerificationStatus>;
   disabled?: boolean;
   disabledHint?: string;
+  showExpiryStatus?: boolean;
 }
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,6 +33,7 @@ export function VerificationTextField({
   onSubmit,
   disabled,
   disabledHint,
+  showExpiryStatus,
 }: VerificationTextFieldProps) {
   const [draft, setDraft] = useState(value ?? "");
   const [saving, setSaving] = useState(false);
@@ -72,6 +75,16 @@ export function VerificationTextField({
   }
 
   const done = Boolean(value) && !saving;
+  const status = showExpiryStatus && type === "date" ? expiryStatus(value) : "unknown";
+
+  const statusClass =
+    status === "expired"
+      ? "border-destructive/30 bg-destructive/10 text-destructive"
+      : status === "expiring"
+        ? "border-amber-200 bg-amber-100 text-amber-700"
+        : done
+          ? "border-green-200 bg-green-100 text-green-700"
+          : "border-input bg-transparent text-muted-foreground";
 
   return (
     <Field id={id} label={label} hint={disabled ? disabledHint : undefined}>
@@ -89,13 +102,23 @@ export function VerificationTextField({
           aria-hidden
           className={cn(
             "flex size-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
-            done ? "border-green-200 bg-green-100 text-green-700" : "border-input bg-transparent text-muted-foreground",
+            statusClass,
             justSaved && "animate-in zoom-in-50 duration-300",
           )}
         >
-          {saving ? <Loader2 className="size-4 animate-spin" /> : done ? <Check className="size-4" /> : null}
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : status === "expired" || status === "expiring" ? (
+            <AlertTriangle className="size-4" />
+          ) : done ? (
+            <Check className="size-4" />
+          ) : null}
         </span>
       </div>
+      {status === "expired" && (
+        <p className="text-xs font-medium text-destructive">Documento scaduto, sostituiscilo.</p>
+      )}
+      {status === "expiring" && <p className="text-xs font-medium text-amber-700">In scadenza entro 30 giorni.</p>}
     </Field>
   );
 }
