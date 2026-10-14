@@ -9,6 +9,7 @@ import { ListSkeleton } from "@/components/shared/list-states";
 import { countCompletedFields, TOTAL_VERIFICATION_FIELDS, VerificationFields } from "@/components/profile/verification-fields";
 import { useConfirmVerification, useSubmitVerificationField, useVerificationStatus } from "@/hooks/use-verification";
 import { ApiError } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export function VerificationGate() {
   const status = useVerificationStatus();
@@ -49,7 +50,18 @@ export function VerificationGate() {
             elemento si salva da solo appena lo scegli o lo scrivi. Alla fine conferma l&apos;invio.
           </p>
           {status.data && (
-            <p className="text-sm font-medium text-primary">{completed} di {TOTAL_VERIFICATION_FIELDS} completati</p>
+            <div className="w-full space-y-1.5">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width] duration-300 ease-out",
+                    allComplete ? "bg-green-600" : "bg-primary",
+                  )}
+                  style={{ width: `${(completed / TOTAL_VERIFICATION_FIELDS) * 100}%` }}
+                />
+              </div>
+              <p className="text-sm font-medium text-primary">{completed} di {TOTAL_VERIFICATION_FIELDS} completati</p>
+            </div>
           )}
         </div>
 
