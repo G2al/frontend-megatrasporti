@@ -5,33 +5,32 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Copy, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Field } from "@/components/shared/field";
-import { PasswordInput } from "@/components/shared/password-input";
 import { brand } from "@/config/brand";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
 
-const schema = z
-  .object({
-    name: z.string().trim().min(1, "Inserisci il nome."),
-    surname: z.string().trim().min(1, "Inserisci il cognome."),
-    phone: z.string().trim().min(1, "Inserisci il numero di telefono."),
-    password: z.string().min(5, "La password deve avere almeno 5 caratteri."),
-    password_confirmation: z.string().min(1, "Conferma la password."),
-  })
-  .refine((values) => values.password === values.password_confirmation, {
-    path: ["password_confirmation"],
-    message: "Le password non coincidono.",
-  });
+const schema = z.object({
+  name: z.string().trim().min(1, "Inserisci il nome."),
+  surname: z.string().trim().min(1, "Inserisci il cognome."),
+  phone: z.string().trim().min(1, "Inserisci il numero di telefono."),
+});
 
 type RegisterValues = z.infer<typeof schema>;
 
+interface RegisterResponse {
+  message?: string;
+  password?: string;
+}
+
 export default function RegisterPage() {
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<RegisterResponse | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
@@ -40,24 +39,33 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", surname: "", phone: "", password: "", password_confirmation: "" },
+    defaultValues: { name: "", surname: "", phone: "" },
   });
 
   async function onSubmit(values: RegisterValues) {
     try {
-      const result = await apiFetch<{ message?: string }>("/auth/register", {
+      const response = await apiFetch<RegisterResponse>("/auth/register", {
         method: "POST",
         body: values,
       });
-      setSuccessMessage(
-        result?.message ?? "Registrazione completata. Attendi l'approvazione dell'amministratore.",
-      );
+      setResult(response);
     } catch (error) {
       handleSubmitError(error, setError);
     }
   }
 
-  if (successMessage) {
+  async function handleCopyPassword() {
+    if (!result?.password) return;
+    try {
+      await navigator.clipboard.writeText(result.password);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Impossibile copiare la password.");
+    }
+  }
+
+  if (result) {
     return (
       <div className="space-y-6 text-center">
         <div className="flex flex-col items-center gap-4">
@@ -65,9 +73,33 @@ export default function RegisterPage() {
           <CheckCircle2 className="size-14 text-green-600" aria-hidden />
           <h1 className="text-2xl font-bold tracking-tight">Registrazione inviata</h1>
           <p role="status" className="text-muted-foreground">
-            {successMessage}
+            {result.message ?? "Registrazione completata. Attendi l'approvazione dell'amministratore."}
           </p>
         </div>
+
+        {result.password && (
+          <div className="space-y-2 rounded-xl border bg-card p-4 text-left shadow-xs">
+            <p className="text-sm text-muted-foreground">
+              La tua password è stata generata automaticamente. Usala per accedere una volta che il tuo account sarà
+              approvato.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="h-11 flex flex-1 items-center overflow-hidden rounded-lg border bg-secondary px-3 text-base font-semibold break-all">
+                {result.password}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 shrink-0 gap-2"
+                onClick={() => void handleCopyPassword()}
+              >
+                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                {copied ? "Copiata" : "Copia"}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <Button render={<Link href="/login" />} nativeButton={false} className="h-12 w-full text-base font-semibold">
           Vai al login
         </Button>
@@ -118,24 +150,6 @@ export default function RegisterPage() {
             className="h-11"
             aria-invalid={Boolean(errors.phone)}
             {...register("phone")}
-          />
-        </Field>
-
-        <Field id="password" label="Password" error={errors.password?.message} hint="Almeno 5 caratteri">
-          <PasswordInput
-            id="password"
-            autoComplete="new-password"
-            aria-invalid={Boolean(errors.password)}
-            {...register("password")}
-          />
-        </Field>
-
-        <Field id="password_confirmation" label="Conferma password" error={errors.password_confirmation?.message}>
-          <PasswordInput
-            id="password_confirmation"
-            autoComplete="new-password"
-            aria-invalid={Boolean(errors.password_confirmation)}
-            {...register("password_confirmation")}
           />
         </Field>
 

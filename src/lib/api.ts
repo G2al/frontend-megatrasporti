@@ -34,6 +34,7 @@ interface ErrorPayload {
   onboarding_required?: boolean;
   is_approved?: boolean;
   must_change_password?: boolean;
+  documents_verified?: boolean;
 }
 
 function buildUrl(path: string, query?: Query): string {
@@ -98,6 +99,7 @@ async function request(path: string, options: RequestOptions): Promise<Response>
     updateStoredUser({
       is_approved: payload.is_approved ?? false,
       must_change_password: payload.must_change_password ?? false,
+      documents_verified: payload.documents_verified ?? false,
     });
   }
 

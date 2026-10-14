@@ -10,11 +10,13 @@ export interface User {
   role: Role;
   must_change_password: boolean;
   is_approved: boolean;
+  documents_verified: boolean;
 }
 
 export interface VerificationStatus {
   is_approved: boolean;
   must_change_password: boolean;
+  documents_verified: boolean;
   address: string | null;
   identity_front_url: string | null;
   identity_back_url: string | null;

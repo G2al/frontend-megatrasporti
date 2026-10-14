@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  if (user?.is_approved === false) {
+  if (user?.is_approved === false || user?.documents_verified === false) {
     return <VerificationGate />;
   }
 

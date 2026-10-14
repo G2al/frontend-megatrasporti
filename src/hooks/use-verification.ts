@@ -22,7 +22,11 @@ export function useSubmitVerificationField() {
   return async function submit(data: FormData): Promise<VerificationStatus> {
     const result = await apiFetch<VerificationStatus>("/verification", { method: "POST", body: data });
     queryClient.setQueryData(VERIFICATION_KEY, result);
-    updateUser({ is_approved: result.is_approved, must_change_password: result.must_change_password });
+    updateUser({
+      is_approved: result.is_approved,
+      must_change_password: result.must_change_password,
+      documents_verified: result.documents_verified,
+    });
     return result;
   };
 }
@@ -34,7 +38,11 @@ export function useConfirmVerification() {
   return async function confirm(): Promise<VerificationStatus> {
     const result = await apiFetch<VerificationStatus>("/verification/confirm", { method: "POST" });
     queryClient.setQueryData(VERIFICATION_KEY, result);
-    updateUser({ is_approved: result.is_approved, must_change_password: result.must_change_password });
+    updateUser({
+      is_approved: result.is_approved,
+      must_change_password: result.must_change_password,
+      documents_verified: result.documents_verified,
+    });
     return result;
   };
 }
