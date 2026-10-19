@@ -13,7 +13,7 @@ const items: ReadonlyArray<{ href: string; label: string; icon: NavIcon }> = [
   { href: "/rifornimenti", label: "Rifornimenti", icon: PumpIcon },
   { href: "/manutenzioni", label: "Manutenzioni", icon: Wrench },
   { href: "/documenti", label: "Documenti", icon: FileText },
-  { href: "/viaggi", label: "Viaggi", icon: Truck },
+  { href: "/viaggi", label: "Bordero", icon: Truck },
 ];
 
 export function BottomNav() {

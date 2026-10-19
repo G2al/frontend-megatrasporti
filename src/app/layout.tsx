@@ -12,7 +12,7 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: { default: brand.name, template: `%s · ${brand.name}` },
-  description: `${brand.name}: rifornimenti, manutenzioni, documenti e viaggi.`,
+  description: `${brand.name}: rifornimenti, manutenzioni, documenti e bordero.`,
   applicationName: brand.name,
   appleWebApp: {
     capable: true,

@@ -1,43 +1,38 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, FileText, Layers, MapPin, Paperclip, Plus, Trash2, Warehouse } from "lucide-react";
+import { CalendarClock, FileText, Layers, PackageMinus, Paperclip, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Field } from "@/components/shared/field";
 import { FormSection } from "@/components/shared/form-section";
 import { MultiFilePicker } from "@/components/shared/multi-file-picker";
-import { DistanceCalculator } from "@/components/trips/distance-calculator";
+import { NumberStepper } from "@/components/shared/number-stepper";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
-import { cn } from "@/lib/utils";
 import { nowInputValue, toInputDateTime } from "@/lib/format";
-import type { GoodsType, Platform, Trip, Vehicle } from "@/types";
+import type { Filiale, GoodsType, Trip, Vehicle } from "@/types";
 
 const schema = z.object({
   date: z.string().min(1, "Inserisci data e ora."),
-  platform_id: z.string().min(1, "Seleziona una piattaforma."),
-  platform_address_id: z.string(),
+  filiale_id: z.string().min(1, "Seleziona una filiale."),
   vehicle_id: z.string().min(1, "Seleziona una targa."),
-  destinations: z
-    .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
-    .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
   goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
   delivery_note_number: z
     .string()
-    .min(1, "Inserisci il numero di bolla.")
-    .regex(/^[0-9-]+$/, "La bolla può contenere solo cifre e trattini.")
+    .min(1, "Inserisci il numero di bordero.")
+    .regex(/^[0-9-]+$/, "Il bordero può contenere solo cifre e trattini.")
     .max(30, "Massimo 30 caratteri."),
+  scarichi: z.string().regex(/^\d*$/, "Solo numeri interi."),
   attachments: z.array(z.instanceof(File)),
 });
 
@@ -50,12 +45,12 @@ const GOODS_OPTIONS: Array<{ value: GoodsType; label: string }> = [
 
 interface TripFormProps {
   vehicles: Vehicle[];
-  platforms: Platform[];
+  filiali: Filiale[];
   trip?: Trip;
   onSaved: () => void;
 }
 
-export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) {
+export function TripForm({ vehicles, filiali, trip, onSaved }: TripFormProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(trip);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<number[]>([]);
@@ -71,51 +66,23 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     control,
     handleSubmit,
     setError,
-    setValue,
     formState: { errors },
   } = useForm<TripValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: trip ? toInputDateTime(trip.date) : nowInputValue(),
-      platform_id: trip ? String(trip.platform?.id ?? "") : "",
-      platform_address_id: trip ? String(trip.platform_address?.id ?? "") : "",
+      filiale_id: trip ? String(trip.filiale?.id ?? "") : "",
       vehicle_id: initialVehicle,
-      destinations: trip && trip.destinations.length > 0 ? trip.destinations.map((value) => ({ value })) : [{ value: "" }],
       goods_type: trip?.goods_type,
       delivery_note_number: trip?.delivery_note_number ?? "",
+      scarichi: trip?.scarichi != null ? String(trip.scarichi) : "",
       attachments: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "destinations" });
-
-  const [watchedPlatformId, watchedPlatformAddressId, watchedDestinations] = useWatch({
-    control,
-    name: ["platform_id", "platform_address_id", "destinations"],
-  });
-
-  const selectedPlatform = useMemo(
-    () => platforms.find((platform) => String(platform.id) === watchedPlatformId),
-    [platforms, watchedPlatformId],
-  );
-  const platformAddresses = useMemo(() => selectedPlatform?.addresses ?? [], [selectedPlatform]);
-  const needsAddressChoice = platformAddresses.length >= 2;
-  const platformAddressOptions = useMemo(
-    () => platformAddresses.map((address) => ({ value: String(address.id), label: address.address })),
-    [platformAddresses],
-  );
-
-  const [invalidDestination, setInvalidDestination] = useState<string | null>(null);
-  const destinationsKey = `${watchedPlatformId}|${watchedDestinations.map((item) => item.value).join("|")}`;
-  const [previousDestinationsKey, setPreviousDestinationsKey] = useState(destinationsKey);
-  if (destinationsKey !== previousDestinationsKey) {
-    setPreviousDestinationsKey(destinationsKey);
-    setInvalidDestination(null);
-  }
-
-  const platformOptions = useMemo(
-    () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
-    [platforms],
+  const filialeOptions = useMemo(
+    () => filiali.map((filiale) => ({ value: String(filiale.id), label: filiale.name })),
+    [filiali],
   );
 
   const remainingExisting = useMemo(
@@ -131,16 +98,12 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     onSuccess: async (_result, data) => {
       saveLastVehicle(String(data.get("vehicle_id") ?? ""));
       await queryClient.invalidateQueries({ queryKey: ["trips"] });
-      toast.success(isEditing ? "Viaggio aggiornato." : "Viaggio salvato.");
+      toast.success(isEditing ? "Bordero aggiornato." : "Bordero salvato.");
       onSaved();
     },
   });
 
   async function onSubmit(values: TripValues) {
-    if (needsAddressChoice && values.platform_address_id === "") {
-      setError("platform_address_id", { type: "manual", message: "Seleziona l'indirizzo della piattaforma." });
-      return;
-    }
     if (!isEditing && values.attachments.length === 0) {
       setError("attachments", { type: "manual", message: "Allega almeno un file." });
       return;
@@ -152,17 +115,11 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
 
     const data = new FormData();
     data.append("date", values.date);
-    data.append("platform_id", values.platform_id);
-    if (needsAddressChoice && values.platform_address_id) {
-      data.append("platform_address_id", values.platform_address_id);
-    }
+    data.append("filiale_id", values.filiale_id);
     data.append("vehicle_id", values.vehicle_id);
-    values.destinations
-      .map((item) => item.value.trim())
-      .filter((value) => value !== "")
-      .forEach((value) => data.append("destinations[]", value));
     if (values.goods_type) data.append("goods_type", values.goods_type);
     data.append("delivery_note_number", values.delivery_note_number);
+    data.append("scarichi", values.scarichi || "0");
     values.attachments.forEach((file) => data.append("attachments[]", file));
     if (isEditing) {
       removedAttachmentIds.forEach((id) => data.append("remove_attachment_ids[]", String(id)));
@@ -176,10 +133,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
   }
 
   const pending = mutation.isPending;
-  const destinationsError =
-    errors.destinations?.root?.message ??
-    errors.destinations?.message ??
-    errors.destinations?.find?.((item) => item?.value)?.value?.message;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-7">
@@ -195,57 +148,25 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
           />
         </Field>
 
-        <Field id="platform_id" label="Piattaforma" icon={Warehouse} error={errors.platform_id?.message}>
+        <Field id="filiale_id" label="Filiale" icon={Warehouse} error={errors.filiale_id?.message}>
           <Controller
             control={control}
-            name="platform_id"
+            name="filiale_id"
             render={({ field }) => (
               <SearchableSelect
-                id="platform_id"
+                id="filiale_id"
                 ref={field.ref}
                 value={field.value}
-                onChange={(value) => {
-                  field.onChange(value);
-                  setValue("platform_address_id", "");
-                }}
-                options={platformOptions}
-                placeholder="Seleziona piattaforma"
-                searchPlaceholder="Cerca piattaforma"
-                invalid={Boolean(errors.platform_id)}
+                onChange={field.onChange}
+                options={filialeOptions}
+                placeholder="Seleziona filiale"
+                searchPlaceholder="Cerca filiale"
+                invalid={Boolean(errors.filiale_id)}
                 disabled={pending}
               />
             )}
           />
         </Field>
-
-        {platformAddresses.length === 1 && (
-          <p className="flex items-center gap-1.5 pl-0.5 text-sm text-muted-foreground">
-            <MapPin className="size-4 shrink-0" aria-hidden />
-            {platformAddresses[0].address}
-          </p>
-        )}
-
-        {needsAddressChoice && (
-          <Field id="platform_address_id" label="Indirizzo piattaforma" icon={MapPin} error={errors.platform_address_id?.message}>
-            <Controller
-              control={control}
-              name="platform_address_id"
-              render={({ field }) => (
-                <SearchableSelect
-                  id="platform_address_id"
-                  ref={field.ref}
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={platformAddressOptions}
-                  placeholder="Seleziona indirizzo"
-                  searchPlaceholder="Cerca indirizzo"
-                  invalid={Boolean(errors.platform_address_id)}
-                  disabled={pending}
-                />
-              )}
-            />
-          </Field>
-        )}
 
         <Controller
           control={control}
@@ -265,78 +186,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
         />
       </FormSection>
 
-      <FormSection title="Destinazioni e carico">
-        <fieldset className="space-y-2">
-          <legend className="flex items-center gap-1.5 text-sm font-medium">
-            <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
-            Destinazioni
-          </legend>
-          {fields.map((item, index) => {
-            const isInvalidDestination =
-              invalidDestination !== null &&
-              watchedDestinations[index]?.value.trim().toLowerCase() === invalidDestination.trim().toLowerCase();
-            return (
-              <div key={item.id} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Input
-                    aria-label={`Destinazione ${index + 1}`}
-                    placeholder={`Destinazione ${index + 1}`}
-                    maxLength={255}
-                    className={cn("flex h-11 items-center py-0 leading-normal", isInvalidDestination && "border-destructive")}
-                    disabled={pending}
-                    aria-invalid={Boolean(errors.destinations?.[index]?.value) || isInvalidDestination}
-                    {...register(`destinations.${index}.value`)}
-                  />
-                  {fields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="size-11 shrink-0"
-                      aria-label={`Rimuovi destinazione ${index + 1}`}
-                      disabled={pending}
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  )}
-                </div>
-                {isInvalidDestination && (
-                  <p role="alert" className="text-xs font-medium text-destructive">
-                    Destinazione non trovata.
-                  </p>
-                )}
-              </div>
-            );
-          })}
-          {destinationsError && (
-            <p role="alert" className="text-sm font-medium text-destructive">
-              {destinationsError}
-            </p>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 w-full gap-2"
-            disabled={pending}
-            onClick={() => append({ value: "" })}
-          >
-            <Plus />
-            Aggiungi destinazione
-          </Button>
-
-          <DistanceCalculator
-            platformId={watchedPlatformId}
-            platformAddressId={needsAddressChoice ? watchedPlatformAddressId : ""}
-            destinations={watchedDestinations.map((item) => item.value)}
-            disabled={pending}
-            onResult={(result) =>
-              setInvalidDestination(
-                result?.distance_error_code === "destination_not_found" ? result.distance_error_destination : null,
-              )
-            }
-          />
-        </fieldset>
-
+      <FormSection title="Carico e scarichi">
         <Field id="goods_type" label="Dicitura" icon={Layers} error={errors.goods_type?.message}>
           <Controller
             control={control}
@@ -363,10 +213,27 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             )}
           />
         </Field>
+
+        <Field id="scarichi" label="Scarichi" icon={PackageMinus} error={errors.scarichi?.message}>
+          <Controller
+            control={control}
+            name="scarichi"
+            render={({ field }) => (
+              <NumberStepper
+                id="scarichi"
+                value={field.value || "0"}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                disabled={pending}
+                invalid={Boolean(errors.scarichi)}
+              />
+            )}
+          />
+        </Field>
       </FormSection>
 
-      <FormSection title="Bolla e allegati">
-        <Field id="delivery_note_number" label="Bolla" icon={FileText} error={errors.delivery_note_number?.message}>
+      <FormSection title="Bordero e allegati">
+        <Field id="delivery_note_number" label="Numero bordero" icon={FileText} error={errors.delivery_note_number?.message}>
           <Controller
             control={control}
             name="delivery_note_number"
@@ -411,7 +278,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
         </Field>
       </FormSection>
 
-      <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva viaggio"} />
+      <SubmitButton pending={pending} label={isEditing ? "Salva modifiche" : "Salva bordero"} />
     </form>
   );
 }

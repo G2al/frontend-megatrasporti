@@ -1,9 +1,7 @@
-import { Fragment } from "react";
-import { ArrowRight, FileText, Layers, Paperclip, Pencil, Truck, User, Warehouse } from "lucide-react";
+import { FileText, Layers, PackageMinus, Paperclip, Pencil, Truck, User, Warehouse } from "lucide-react";
 import { AttachmentThumb } from "@/components/shared/attachment-thumb";
 import { authorTitle } from "@/components/shared/author-line";
 import { Button } from "@/components/ui/button";
-import { DistanceResult } from "@/components/trips/distance-result";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -27,7 +25,7 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
         <div className="min-w-0 flex-1">
           <h3 className="flex items-center gap-1.5 text-base font-semibold">
             <FileText className="size-4 shrink-0 text-primary" aria-hidden />
-            <span className="truncate">Bolla {trip.delivery_note_number}</span>
+            <span className="truncate">Bordero {trip.delivery_note_number}</span>
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">{formatDateTime(trip.date)}</p>
         </div>
@@ -45,7 +43,7 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
               type="button"
               variant="outline"
               size="icon-sm"
-              aria-label="Modifica viaggio"
+              aria-label="Modifica bordero"
               onClick={onEdit}
             >
               <Pencil className="size-4" />
@@ -54,33 +52,11 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
         </div>
       </header>
 
-      {trip.destinations.length > 0 && (
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-secondary px-3 py-2 text-base font-semibold text-primary">
-          {trip.destinations.map((destination, index) => (
-            <Fragment key={`${destination}-${index}`}>
-              {index > 0 && <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-label="verso" />}
-              <span className="min-w-0 break-words">{destination}</span>
-            </Fragment>
-          ))}
-        </p>
-      )}
-
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
         <InfoItem icon={Truck} text={trip.vehicle?.plate ?? "—"} />
         <InfoItem icon={Layers} text={GOODS_LABELS[trip.goods_type] ?? trip.goods_type} />
-        <InfoItem
-          icon={Warehouse}
-          text={trip.platform_address ? `${trip.platform?.name ?? "—"} · ${trip.platform_address.address}` : (trip.platform?.name ?? "—")}
-          className="col-span-2"
-        />
-        {trip.distance_status && (
-          <DistanceResult
-            status={trip.distance_status}
-            km={trip.distance_km}
-            note={trip.distance_note}
-            className="col-span-2"
-          />
-        )}
+        <InfoItem icon={Warehouse} text={trip.filiale?.name ?? "—"} className="col-span-2" />
+        {trip.scarichi !== null && <InfoItem icon={PackageMinus} text={`${trip.scarichi} scarichi`} className="col-span-2" />}
       </div>
 
       <footer className="space-y-2 border-t pt-3">

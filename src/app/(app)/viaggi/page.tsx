@@ -12,7 +12,7 @@ import { RecordSheet } from "@/components/shared/record-sheet";
 import { TripCard } from "@/components/trips/trip-card";
 import { TripForm } from "@/components/trips/trip-form";
 import { useAuth } from "@/hooks/use-auth";
-import { usePlatforms, useTrips, useVehicles } from "@/hooks/use-data";
+import { useFiliali, useTrips, useVehicles } from "@/hooks/use-data";
 import { useTabVehicles } from "@/hooks/use-tab-vehicles";
 import { canEditRecord } from "@/lib/form";
 import { byDateDesc, matchesSearch } from "@/lib/search";
@@ -27,7 +27,7 @@ export default function TripsPage() {
 
   const trips = useTrips();
   const vehicles = useVehicles();
-  const platforms = usePlatforms();
+  const filiali = useFiliali();
 
   const tabVehicles = useTabVehicles(vehicles.data, trips.data);
 
@@ -38,10 +38,9 @@ export default function TripsPage() {
         .filter((t) =>
           matchesSearch(search, [
             t.delivery_note_number,
-            t.platform?.name,
+            t.filiale?.name,
             t.vehicle?.plate,
             t.vehicle?.name,
-            t.destinations.join(" "),
             t.user?.full_name,
           ]),
         )
@@ -64,15 +63,15 @@ export default function TripsPage() {
     return !trip.is_certified || user?.role === "admin";
   }
 
-  const ready = Boolean(vehicles.data && platforms.data);
+  const ready = Boolean(vehicles.data && filiali.data);
 
   return (
     <>
       <ListToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Cerca bolla, destinazione, targa..."
-        actionLabel="Nuovo viaggio"
+        searchPlaceholder="Cerca bordero, filiale, targa..."
+        actionLabel="Nuovo bordero"
         onAction={openCreate}
         vehicles={tabVehicles}
         vehicleFilter={vehicleFilter}
@@ -91,8 +90,8 @@ export default function TripsPage() {
         isError={trips.isError}
         onRetry={() => void trips.refetch()}
         icon={Truck}
-        emptyTitle="Nessun viaggio"
-        emptyDescription="Registra il tuo primo viaggio con il pulsante qui sopra."
+        emptyTitle="Nessun bordero"
+        emptyDescription="Registra il tuo primo bordero con il pulsante qui sopra."
         render={(trip) => (
           <TripCard trip={trip} canEdit={canEditTrip(trip)} onEdit={() => openEdit(trip)} />
         )}
@@ -104,13 +103,13 @@ export default function TripsPage() {
           setOpen(next);
           if (!next) setEditing(null);
         }}
-        title={editing ? "Modifica viaggio" : "Nuovo viaggio"}
-        description={editing ? "Aggiorna i dati del viaggio." : "Compila i dati del viaggio e allega la bolla."}
+        title={editing ? "Modifica bordero" : "Nuovo bordero"}
+        description={editing ? "Aggiorna i dati del bordero." : "Compila i dati del bordero e allega il documento."}
       >
         {ready ? (
           <TripForm
             vehicles={vehicles.data!}
-            platforms={platforms.data!}
+            filiali={filiali.data!}
             trip={editing ?? undefined}
             onSaved={() => {
               setOpen(false);

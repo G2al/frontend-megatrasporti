@@ -77,6 +77,12 @@ export interface Platform {
   addresses: PlatformAddress[];
 }
 
+export interface Filiale {
+  id: number;
+  name: string;
+  codice: string;
+}
+
 export interface Author {
   id: number;
   full_name: string;
@@ -125,32 +131,15 @@ export interface TripAttachment {
   url: string;
 }
 
-export type DistanceStatus = "calculated" | "estimated" | "unavailable";
-
-export type DistanceErrorCode =
-  | "platform_missing_address"
-  | "platform_geocoding_failed"
-  | "platform_address_required"
-  | "destination_not_found"
-  | "service_unavailable"
-  | "unknown";
-
 export interface Trip {
   id: number;
   date: string;
-  destinations: string[];
   goods_type: GoodsType;
   delivery_note_number: string;
+  scarichi: number | null;
   attachments: TripAttachment[];
   is_certified: boolean;
-  distance_km: number | string | null;
-  distance_status: DistanceStatus | null;
-  distance_note: string | null;
-  distance_error_code: DistanceErrorCode | null;
-  distance_error_destination: string | null;
-  distance_calculated_at: string | null;
-  platform: Platform | null;
-  platform_address: PlatformAddress | null;
+  filiale: Filiale | null;
   vehicle: Vehicle | null;
   user: Author | null;
 }
@@ -181,8 +170,8 @@ export interface KmStartResponse {
   source: string | null;
 }
 
-export interface TripSchedulePlatformTotal {
-  platform: string;
+export interface TripScheduleFilialeTotal {
+  filiale: string;
   total: number;
 }
 
@@ -197,6 +186,6 @@ export interface TripSchedule {
   month: string;
   total_trips: number;
   month_total: number | null;
-  platform_totals: TripSchedulePlatformTotal[] | null;
+  filiale_totals: TripScheduleFilialeTotal[] | null;
   days: TripScheduleDay[];
 }

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch, unwrapList } from "@/lib/api";
 import type {
   DocumentFolder,
+  Filiale,
   KmStartResponse,
   Maintenance,
   Movement,
@@ -42,6 +43,10 @@ export function useSuppliers() {
 
 export function usePlatforms() {
   return useList<Platform>("platforms", "/platforms", true);
+}
+
+export function useFiliali() {
+  return useList<Filiale>("filiali", "/filiali", true);
 }
 
 export function useMovements() {
