@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, FileText, Layers, MapPin, Paperclip, Plus, Trash2, Warehouse } from "lucide-react";
+import { Building2, CalendarClock, FileText, Layers, MapPin, Paperclip, Plus, Trash2, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -222,6 +222,13 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
           <p className="flex items-center gap-1.5 pl-0.5 text-sm text-muted-foreground">
             <MapPin className="size-4 shrink-0" aria-hidden />
             {platformAddresses[0].address}
+          </p>
+        )}
+
+        {selectedPlatform?.company && (
+          <p className="flex items-center gap-1.5 pl-0.5 text-sm text-muted-foreground">
+            <Building2 className="size-4 shrink-0" aria-hidden />
+            Società: {selectedPlatform.company}
           </p>
         )}
 

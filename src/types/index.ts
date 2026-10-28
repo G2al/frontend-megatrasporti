@@ -80,6 +80,7 @@ export interface PlatformAddress {
 export interface Platform {
   id: number;
   name: string;
+  company: string | null;
   addresses: PlatformAddress[];
 }
 
