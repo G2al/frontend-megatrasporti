@@ -228,7 +228,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
         {selectedPlatform?.company && (
           <p className="flex items-center gap-1.5 pl-0.5 text-sm text-muted-foreground">
             <Building2 className="size-4 shrink-0" aria-hidden />
-            Società: {selectedPlatform.company}
+            Società di appartenenza: {selectedPlatform.company}
           </p>
         )}
 

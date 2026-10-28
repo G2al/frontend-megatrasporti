@@ -122,9 +122,9 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     },
   });
 
-  const [vehicleId, date, stationId, kmStart, kmEnd, liters] = useWatch({
+  const [vehicleId, date, stationId, platformId, kmStart, kmEnd, liters] = useWatch({
     control,
-    name: ["vehicle_id", "date", "station_id", "km_start", "km_end", "liters"],
+    name: ["vehicle_id", "date", "station_id", "platform_id", "km_start", "km_end", "liters"],
   });
 
   const { data: kmStartData } = useKmStart(!isEditing && vehicleId ? Number(vehicleId) : null, date);
@@ -136,6 +136,7 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
   }, [isEditing, kmStartData, setValue]);
 
   const station = stations.find((item) => String(item.id) === stationId);
+  const selectedPlatform = platforms.find((item) => String(item.id) === platformId);
 
   const previousStationId = useRef(stationId);
   useEffect(() => {
@@ -300,7 +301,13 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
           </Field>
         )}
 
-        <Field id="platform_id" label="Piattaforma" icon={Warehouse} error={errors.platform_id?.message}>
+        <Field
+          id="platform_id"
+          label="Piattaforma"
+          icon={Warehouse}
+          error={errors.platform_id?.message}
+          hint={selectedPlatform?.company ? `Società di appartenenza: ${selectedPlatform.company}` : undefined}
+        >
           <Controller
             control={control}
             name="platform_id"
