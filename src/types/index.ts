@@ -59,11 +59,17 @@ export interface Station {
   cards: StationCard[];
 }
 
+export interface SupplierType {
+  id: number;
+  name: string;
+}
+
 export interface Supplier {
   id: number;
   name: string;
   phone: string | null;
   email: string | null;
+  type: SupplierType | null;
 }
 
 export interface PlatformAddress {

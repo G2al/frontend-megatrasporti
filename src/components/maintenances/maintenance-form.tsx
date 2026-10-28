@@ -107,7 +107,11 @@ export function MaintenanceForm({ vehicles, suppliers, maintenance, onSaved }: M
   }, [isEditing, selectedVehicle, setValue]);
 
   const supplierOptions = useMemo(
-    () => suppliers.map((supplier) => ({ value: String(supplier.id), label: supplier.name })),
+    () =>
+      suppliers.map((supplier) => ({
+        value: String(supplier.id),
+        label: supplier.type ? `${supplier.name} (${supplier.type.name})` : supplier.name,
+      })),
     [suppliers],
   );
 
