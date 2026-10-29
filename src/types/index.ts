@@ -71,16 +71,23 @@ export interface PlatformAddress {
   address: string;
 }
 
-export interface Platform {
-  id: number;
-  name: string;
-  addresses: PlatformAddress[];
-}
-
 export interface Filiale {
   id: number;
   name: string;
   codice: string;
+}
+
+export interface PlatformGoodsType {
+  id: number;
+  name: string;
+  filiali: Filiale[];
+}
+
+export interface Platform {
+  id: number;
+  name: string;
+  addresses: PlatformAddress[];
+  goods_types: PlatformGoodsType[];
 }
 
 export interface Author {
@@ -123,8 +130,6 @@ export interface Maintenance {
   user: Author | null;
 }
 
-export type GoodsType = "secco" | "freschi";
-
 export interface TripAttachment {
   id: number;
   path?: string;
@@ -134,7 +139,7 @@ export interface TripAttachment {
 export interface Trip {
   id: number;
   date: string;
-  goods_type: GoodsType;
+  goods_type: string;
   delivery_note_number: string;
   scarichi: number | null;
   attachments: TripAttachment[];

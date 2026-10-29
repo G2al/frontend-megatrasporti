@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { GoodsType, Trip } from "@/types";
-
-const GOODS_LABELS: Record<GoodsType, string> = {
-  secco: "Secco",
-  freschi: "Freschi",
-};
+import type { Trip } from "@/types";
 
 interface TripCardProps {
   trip: Trip;
@@ -54,7 +49,7 @@ export function TripCard({ trip, canEdit, onEdit }: TripCardProps) {
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
         <InfoItem icon={Truck} text={trip.vehicle?.plate ?? "—"} />
-        <InfoItem icon={Layers} text={GOODS_LABELS[trip.goods_type] ?? trip.goods_type} />
+        <InfoItem icon={Layers} text={trip.goods_type} />
         <InfoItem icon={Warehouse} text={trip.filiale?.name ?? "—"} className="col-span-2" />
         {trip.scarichi !== null && <InfoItem icon={PackageMinus} text={`${trip.scarichi} scarichi`} className="col-span-2" />}
       </div>

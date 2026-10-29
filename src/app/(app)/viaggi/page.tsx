@@ -12,7 +12,7 @@ import { RecordSheet } from "@/components/shared/record-sheet";
 import { TripCard } from "@/components/trips/trip-card";
 import { TripForm } from "@/components/trips/trip-form";
 import { useAuth } from "@/hooks/use-auth";
-import { useFiliali, useTrips, useVehicles } from "@/hooks/use-data";
+import { usePlatforms, useTrips, useVehicles } from "@/hooks/use-data";
 import { useTabVehicles } from "@/hooks/use-tab-vehicles";
 import { canEditRecord } from "@/lib/form";
 import { byDateDesc, matchesSearch } from "@/lib/search";
@@ -27,7 +27,7 @@ export default function TripsPage() {
 
   const trips = useTrips();
   const vehicles = useVehicles();
-  const filiali = useFiliali();
+  const platforms = usePlatforms();
 
   const tabVehicles = useTabVehicles(vehicles.data, trips.data);
 
@@ -63,7 +63,7 @@ export default function TripsPage() {
     return !trip.is_certified || user?.role === "admin";
   }
 
-  const ready = Boolean(vehicles.data && filiali.data);
+  const ready = Boolean(vehicles.data && platforms.data);
 
   return (
     <>
@@ -109,7 +109,7 @@ export default function TripsPage() {
         {ready ? (
           <TripForm
             vehicles={vehicles.data!}
-            filiali={filiali.data!}
+            platforms={platforms.data!}
             trip={editing ?? undefined}
             onSaved={() => {
               setOpen(false);
