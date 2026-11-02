@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Camera, CreditCard, Droplets, Euro, Fuel, Gauge, MapPin, StickyNote, Warehouse } from "lucide-react";
+import { CalendarClock, Camera, CreditCard, Droplets, Euro, Fuel, Gauge, MapPin, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import { useKmStart } from "@/hooks/use-data";
 import { apiFetch } from "@/lib/api";
 import { appendOptional, handleSubmitError } from "@/lib/form";
 import { formatMoney, formatNumber, nowInputValue, parseDecimal, toInputDateTime, toNumber } from "@/lib/format";
-import type { Movement, Platform, Station, Vehicle } from "@/types";
+import type { Movement, Station, Vehicle } from "@/types";
 
 const integer = (label: string) =>
   z.string().trim().min(1, `${label} obbligatori.`).regex(/^\d+$/, `${label}: inserisci solo numeri interi.`);
@@ -41,7 +41,6 @@ function createSchema(requirePhoto: boolean) {
     .object({
       date: z.string().min(1, "Inserisci data e ora."),
       station_id: z.string().min(1, "Seleziona una stazione."),
-      platform_id: z.string().min(1, "Seleziona una piattaforma."),
       vehicle_id: z.string().min(1, "Seleziona un veicolo."),
       km_start: integer("Km iniziali"),
       km_end: integer("Km finali"),
@@ -79,12 +78,11 @@ type MovementValues = z.infer<ReturnType<typeof createSchema>>;
 interface MovementFormProps {
   vehicles: Vehicle[];
   stations: Station[];
-  platforms: Platform[];
   movement?: Movement;
   onSaved: () => void;
 }
 
-export function MovementForm({ vehicles, stations, platforms, movement, onSaved }: MovementFormProps) {
+export function MovementForm({ vehicles, stations, movement, onSaved }: MovementFormProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(movement);
 
@@ -108,7 +106,6 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     defaultValues: {
       date: movement ? toInputDateTime(movement.date) : nowInputValue(),
       station_id: movement ? String(movement.station?.id ?? "") : "",
-      platform_id: movement ? String(movement.platform?.id ?? "") : "",
       vehicle_id: initialVehicle,
       km_start: movement ? String(movement.km_start) : "",
       km_end: movement ? String(movement.km_end) : "",
@@ -122,9 +119,9 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     },
   });
 
-  const [vehicleId, date, stationId, platformId, kmStart, kmEnd, liters] = useWatch({
+  const [vehicleId, date, stationId, kmStart, kmEnd, liters] = useWatch({
     control,
-    name: ["vehicle_id", "date", "station_id", "platform_id", "km_start", "km_end", "liters"],
+    name: ["vehicle_id", "date", "station_id", "km_start", "km_end", "liters"],
   });
 
   const { data: kmStartData } = useKmStart(!isEditing && vehicleId ? Number(vehicleId) : null, date);
@@ -136,7 +133,6 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
   }, [isEditing, kmStartData, setValue]);
 
   const station = stations.find((item) => String(item.id) === stationId);
-  const selectedPlatform = platforms.find((item) => String(item.id) === platformId);
 
   const previousStationId = useRef(stationId);
   useEffect(() => {
@@ -164,11 +160,6 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     () => stations.map((item) => ({ value: String(item.id), label: item.name, keywords: item.address ?? "" })),
     [stations],
   );
-  const platformOptions = useMemo(
-    () => platforms.map((platform) => ({ value: String(platform.id), label: platform.name })),
-    [platforms],
-  );
-
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
       isEditing
@@ -195,7 +186,6 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
 
     const data = new FormData();
     data.append("station_id", values.station_id);
-    data.append("platform_id", values.platform_id);
     data.append("vehicle_id", values.vehicle_id);
     data.append("date", values.date);
     data.append("km_start", values.km_start);
@@ -300,32 +290,6 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
             </div>
           </Field>
         )}
-
-        <Field
-          id="platform_id"
-          label="Piattaforma"
-          icon={Warehouse}
-          error={errors.platform_id?.message}
-          hint={selectedPlatform?.company ? `Società di appartenenza: ${selectedPlatform.company}` : undefined}
-        >
-          <Controller
-            control={control}
-            name="platform_id"
-            render={({ field }) => (
-              <SearchableSelect
-                id="platform_id"
-                ref={field.ref}
-                value={field.value}
-                onChange={field.onChange}
-                options={platformOptions}
-                placeholder="Seleziona piattaforma"
-                searchPlaceholder="Cerca piattaforma"
-                invalid={Boolean(errors.platform_id)}
-                disabled={pending}
-              />
-            )}
-          />
-        </Field>
       </FormSection>
 
       <FormSection title="Veicolo e chilometraggio">

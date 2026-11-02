@@ -9,7 +9,7 @@ import { ListSkeleton } from "@/components/shared/list-states";
 import { RecordList } from "@/components/shared/record-list";
 import { RecordSheet } from "@/components/shared/record-sheet";
 import { useAuth } from "@/hooks/use-auth";
-import { useMovements, usePlatforms, useStations, useVehicles } from "@/hooks/use-data";
+import { useMovements, useStations, useVehicles } from "@/hooks/use-data";
 import { useTabVehicles } from "@/hooks/use-tab-vehicles";
 import { canEditRecord } from "@/lib/form";
 import { byDateDesc, matchesSearch } from "@/lib/search";
@@ -25,7 +25,6 @@ export default function MovementsPage() {
   const movements = useMovements();
   const vehicles = useVehicles();
   const stations = useStations();
-  const platforms = usePlatforms();
 
   const tabVehicles = useTabVehicles(vehicles.data, movements.data);
 
@@ -56,7 +55,7 @@ export default function MovementsPage() {
     setOpen(true);
   }
 
-  const ready = Boolean(vehicles.data && stations.data && platforms.data);
+  const ready = Boolean(vehicles.data && stations.data);
 
   return (
     <>
@@ -106,7 +105,6 @@ export default function MovementsPage() {
           <MovementForm
             vehicles={vehicles.data!}
             stations={stations.data!}
-            platforms={platforms.data!}
             movement={editing ?? undefined}
             onSaved={() => {
               setOpen(false);
