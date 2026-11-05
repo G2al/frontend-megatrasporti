@@ -2,7 +2,7 @@
 
 import { useRef, useState, type Ref } from "react";
 import Image from "next/image";
-import { FileText, Loader2, Paperclip, X } from "lucide-react";
+import { Camera, FileText, Loader2, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/format";
@@ -43,8 +43,10 @@ export function MultiFilePicker({
   disabled,
   ref,
 }: MultiFilePickerProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
+  const isImageAccept = accept.includes("image/");
 
   async function handleFiles(selected: FileList | null) {
     if (!selected || selected.length === 0) return;
@@ -56,7 +58,8 @@ export function MultiFilePicker({
       toast.error(error instanceof Error ? error.message : "Impossibile elaborare uno dei file.");
     } finally {
       setProcessing(false);
-      if (inputRef.current) inputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   }
 
@@ -68,8 +71,20 @@ export function MultiFilePicker({
 
   return (
     <div className="space-y-2">
+      {isImageAccept && (
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept={accept}
+          capture="environment"
+          tabIndex={-1}
+          className="sr-only"
+          aria-hidden
+          onChange={(event) => void handleFiles(event.target.files)}
+        />
+      )}
       <input
-        ref={inputRef}
+        ref={galleryInputRef}
         type="file"
         accept={accept}
         multiple
@@ -134,19 +149,47 @@ export function MultiFilePicker({
         </ul>
       )}
 
-      <Button
-        id={id}
-        ref={ref}
-        type="button"
-        variant="outline"
-        disabled={disabled || processing}
-        aria-invalid={invalid || undefined}
-        onClick={() => inputRef.current?.click()}
-        className={cn("h-12 w-full gap-2 text-base", invalid && "border-destructive")}
-      >
-        {processing ? <Loader2 className="animate-spin" /> : <Paperclip />}
-        {processing ? "Elaborazione..." : hasAny ? "Aggiungi altro file" : emptyLabel}
-      </Button>
+      {isImageAccept ? (
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            id={id}
+            ref={ref}
+            type="button"
+            variant="outline"
+            disabled={disabled || processing}
+            aria-invalid={invalid || undefined}
+            onClick={() => cameraInputRef.current?.click()}
+            className={cn("h-12 gap-2 text-base", invalid && "border-destructive")}
+          >
+            {processing ? <Loader2 className="animate-spin" /> : <Camera />}
+            {processing ? "Elaborazione..." : "Scatta foto"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled || processing}
+            onClick={() => galleryInputRef.current?.click()}
+            className="h-12 gap-2 text-base"
+          >
+            <Paperclip />
+            {hasAny ? "Aggiungi altro" : "Scegli file"}
+          </Button>
+        </div>
+      ) : (
+        <Button
+          id={id}
+          ref={ref}
+          type="button"
+          variant="outline"
+          disabled={disabled || processing}
+          aria-invalid={invalid || undefined}
+          onClick={() => galleryInputRef.current?.click()}
+          className={cn("h-12 w-full gap-2 text-base", invalid && "border-destructive")}
+        >
+          {processing ? <Loader2 className="animate-spin" /> : <Paperclip />}
+          {processing ? "Elaborazione..." : hasAny ? "Aggiungi altro file" : emptyLabel}
+        </Button>
+      )}
     </div>
   );
 }
