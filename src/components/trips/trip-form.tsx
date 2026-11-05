@@ -32,7 +32,7 @@ const schema = z.object({
   destinations: z
     .array(z.object({ value: z.string().trim().max(255, "Massimo 255 caratteri.") }))
     .refine((items) => items.some((item) => item.value !== ""), "Inserisci almeno una destinazione."),
-  goods_type: z.enum(["secco", "freschi"], { message: "Seleziona la dicitura." }),
+  goods_type: z.enum(["secco", "freschi", "secco_freschi"], { message: "Seleziona la dicitura." }),
   delivery_note_number: z
     .string()
     .min(1, "Inserisci il numero di bolla.")
@@ -46,6 +46,7 @@ type TripValues = z.infer<typeof schema>;
 const GOODS_OPTIONS: Array<{ value: GoodsType; label: string }> = [
   { value: "secco", label: "Secco" },
   { value: "freschi", label: "Freschi" },
+  { value: "secco_freschi", label: "Secco + Freschi" },
 ];
 
 interface TripFormProps {

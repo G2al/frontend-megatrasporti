@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, FileCheck, KeyRound, UserRound } from "lucide-react";
+import { ArrowLeft, Download, FileCheck, KeyRound, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
 import { VerificationFields } from "@/components/profile/verification-fields";
 import { ListSkeleton } from "@/components/shared/list-states";
 import { useAuth } from "@/hooks/use-auth";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { useSubmitVerificationField, useVerificationStatus } from "@/hooks/use-verification";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const [view, setView] = useState<"info" | "password" | "documents">("info");
   const verificationStatus = useVerificationStatus(open && view === "documents");
   const submitVerificationField = useSubmitVerificationField();
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next);
@@ -58,6 +60,12 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
               <FileCheck className="size-4" />
               I miei documenti
             </Button>
+            {canInstall && (
+              <Button variant="outline" className="h-11 w-full gap-2" onClick={() => void promptInstall()}>
+                <Download className="size-4" />
+                Installa app
+              </Button>
+            )}
           </>
         ) : view === "password" ? (
           <>

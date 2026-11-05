@@ -12,6 +12,7 @@ import type { GoodsType, Trip } from "@/types";
 const GOODS_LABELS: Record<GoodsType, string> = {
   secco: "Secco",
   freschi: "Freschi",
+  secco_freschi: "Secco + Freschi",
 };
 
 interface TripCardProps {

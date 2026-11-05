@@ -124,7 +124,7 @@ export interface Maintenance {
   user: Author | null;
 }
 
-export type GoodsType = "secco" | "freschi";
+export type GoodsType = "secco" | "freschi" | "secco_freschi";
 
 export interface TripAttachment {
   id: number;
