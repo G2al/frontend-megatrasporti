@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Camera, Check, Loader2 } from "lucide-react";
+import { Camera, Check, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
@@ -18,7 +18,8 @@ interface VerificationFileRowProps {
 }
 
 export function VerificationFileRow({ label, fieldName, existingUrl, onSubmit }: VerificationFileRowProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const done = Boolean(existingUrl);
@@ -37,14 +38,25 @@ export function VerificationFileRow({ label, fieldName, existingUrl, onSubmit }:
       toast.error(error instanceof ApiError ? error.firstMessage() : "Impossibile caricare il file.");
     } finally {
       setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   }
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        aria-hidden
+        tabIndex={-1}
+        onChange={(event) => void handleFile(event.target.files?.[0])}
+      />
+      <input
+        ref={galleryInputRef}
         type="file"
         accept="image/*"
         className="sr-only"
@@ -65,25 +77,34 @@ export function VerificationFileRow({ label, fieldName, existingUrl, onSubmit }:
           {done ? "Caricato" : "Non caricato"}
         </p>
       </div>
-      <Button
-        type="button"
-        variant={done ? "outline" : "default"}
-        size="sm"
-        className={cn("shrink-0", justSaved && "animate-in zoom-in-50 duration-300")}
-        disabled={uploading}
-        onClick={() => inputRef.current?.click()}
-      >
-        {uploading ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : justSaved ? (
-          <Check className="size-4" />
-        ) : done ? (
-          <Check className="size-4" />
-        ) : (
-          <Camera className="size-4" />
-        )}
-        {uploading ? "Caricamento..." : done ? "Sostituisci" : "Carica"}
-      </Button>
+      <div className={cn("flex shrink-0 gap-1.5", justSaved && "animate-in zoom-in-50 duration-300")}>
+        <Button
+          type="button"
+          variant={done ? "outline" : "default"}
+          size="icon-sm"
+          aria-label="Scatta foto"
+          disabled={uploading}
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          {uploading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : justSaved ? (
+            <Check className="size-4" />
+          ) : (
+            <Camera className="size-4" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          aria-label="Scegli dalla galleria"
+          disabled={uploading}
+          onClick={() => galleryInputRef.current?.click()}
+        >
+          <ImageIcon className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
