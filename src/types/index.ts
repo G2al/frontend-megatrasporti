@@ -83,6 +83,12 @@ export interface Author {
   role?: Role;
 }
 
+export interface MovementAttachment {
+  id: number;
+  path?: string;
+  url: string;
+}
+
 export interface Movement {
   id: number;
   date: string;
@@ -95,7 +101,7 @@ export interface Movement {
   is_voucher: boolean;
   station_card_id: number | null;
   km_per_liter: number | string | null;
-  photo_url: string | null;
+  attachments: MovementAttachment[];
   station: Station | null;
   platform: Platform | null;
   vehicle: Vehicle | null;

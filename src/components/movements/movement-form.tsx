@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Camera, CreditCard, Droplets, Euro, Fuel, Gauge, MapPin, StickyNote, Warehouse } from "lucide-react";
+import { CalendarClock, CreditCard, Droplets, Euro, Fuel, Gauge, MapPin, Paperclip, StickyNote, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConsumptionBadge } from "@/components/movements/consumption-badge";
 import { AddCardInline } from "@/components/shared/add-card-inline";
 import { Field } from "@/components/shared/field";
-import { FilePicker } from "@/components/shared/file-picker";
+import { MultiFilePicker } from "@/components/shared/multi-file-picker";
 import { FormSection } from "@/components/shared/form-section";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import type { SelectOption } from "@/components/shared/searchable-select";
@@ -36,7 +36,7 @@ const decimal = (label: string) =>
     .min(1, `${label} obbligatorio.`)
     .refine((value) => Number.isFinite(parseDecimal(value)) && parseDecimal(value) > 0, `${label}: inserisci un numero maggiore di zero.`);
 
-function createSchema(requirePhoto: boolean) {
+function createSchema() {
   return z
     .object({
       date: z.string().min(1, "Inserisci data e ora."),
@@ -54,9 +54,7 @@ function createSchema(requirePhoto: boolean) {
         .trim()
         .refine((value) => value === "" || (Number.isFinite(parseDecimal(value)) && parseDecimal(value) >= 0), "AdBlue: inserisci un numero valido."),
       notes: z.string(),
-      photo: requirePhoto
-        ? z.instanceof(File, { message: "La foto della ricevuta è obbligatoria." })
-        : z.instanceof(File).optional(),
+      attachments: z.array(z.instanceof(File)),
     })
     .superRefine((values, context) => {
       if (/^\d+$/.test(values.km_start) && /^\d+$/.test(values.km_end) && Number(values.km_end) < Number(values.km_start)) {
@@ -87,8 +85,9 @@ interface MovementFormProps {
 export function MovementForm({ vehicles, stations, platforms, movement, onSaved }: MovementFormProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(movement);
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState<number[]>([]);
 
-  const schema = useMemo(() => createSchema(!isEditing), [isEditing]);
+  const schema = useMemo(() => createSchema(), []);
 
   const initialVehicle = useMemo(() => {
     if (movement) return String(movement.vehicle?.id ?? "");
@@ -118,7 +117,7 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
       station_card_id: movement?.station_card_id ? String(movement.station_card_id) : "",
       adblue: movement?.adblue !== null && movement?.adblue !== undefined ? String(movement.adblue) : "",
       notes: movement?.notes ?? "",
-      photo: undefined,
+      attachments: [],
     },
   });
 
@@ -168,6 +167,11 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     [platforms],
   );
 
+  const remainingExisting = useMemo(
+    () => (movement?.attachments ?? []).filter((item) => !removedAttachmentIds.includes(item.id)),
+    [movement, removedAttachmentIds],
+  );
+
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
       isEditing
@@ -191,6 +195,14 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
       });
       return;
     }
+    if (!isEditing && values.attachments.length === 0) {
+      setError("attachments", { type: "manual", message: "Allega almeno una ricevuta." });
+      return;
+    }
+    if (isEditing && remainingExisting.length === 0 && values.attachments.length === 0) {
+      setError("attachments", { type: "manual", message: "Deve restare almeno un allegato." });
+      return;
+    }
 
     const data = new FormData();
     data.append("station_id", values.station_id);
@@ -207,7 +219,10 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
     }
     if (values.adblue.trim() !== "") data.append("adblue", String(parseDecimal(values.adblue)));
     appendOptional(data, "notes", values.notes);
-    if (values.photo) data.append("photo", values.photo);
+    values.attachments.forEach((file) => data.append("attachments[]", file));
+    if (isEditing) {
+      removedAttachmentIds.forEach((id) => data.append("remove_attachment_ids[]", String(id)));
+    }
 
     try {
       await mutation.mutateAsync(data);
@@ -414,20 +429,21 @@ export function MovementForm({ vehicles, stations, platforms, movement, onSaved 
           <Textarea id="notes" rows={3} className="text-base" disabled={pending} {...register("notes")} />
         </Field>
 
-        <Field id="photo" label="Foto ricevuta" icon={Camera} error={errors.photo?.message}>
+        <Field id="attachments" label="Ricevute" icon={Paperclip} error={errors.attachments?.message}>
           <Controller
             control={control}
-            name="photo"
+            name="attachments"
             render={({ field }) => (
-              <FilePicker
-                id="photo"
+              <MultiFilePicker
+                id="attachments"
                 ref={field.ref}
-                value={field.value}
-                onChange={field.onChange}
+                files={field.value}
+                onFilesChange={field.onChange}
+                existing={remainingExisting}
+                onRemoveExisting={(id) => setRemovedAttachmentIds((current) => [...current, id])}
                 accept="image/*"
-                emptyLabel="Scatta o scegli una foto"
-                existingUrl={movement?.photo_url}
-                invalid={Boolean(errors.photo)}
+                emptyLabel="Scatta o scegli una o più foto"
+                invalid={Boolean(errors.attachments)}
                 disabled={pending}
               />
             )}

@@ -1,7 +1,6 @@
-import { ArrowRight, CreditCard, Droplets, Gauge, MapPin, Pencil, Route, Ticket, Truck, User } from "lucide-react";
+import { ArrowRight, CreditCard, Droplets, Gauge, MapPin, Paperclip, Pencil, Route, Ticket, Truck, User } from "lucide-react";
 import { ConsumptionBadge } from "@/components/movements/consumption-badge";
-import { ReceiptThumb } from "@/components/movements/receipt-thumb";
-import { AttachmentLink } from "@/components/shared/attachment-link";
+import { AttachmentThumb } from "@/components/shared/attachment-thumb";
 import { authorTitle } from "@/components/shared/author-line";
 import { Button } from "@/components/ui/button";
 import { InfoItem } from "@/components/shared/info-item";
@@ -76,17 +75,26 @@ export function MovementCard({ movement, canEdit, onEdit }: MovementCardProps) {
         <p className="line-clamp-3 text-sm break-words text-muted-foreground">{movement.notes}</p>
       )}
 
-      <footer className="flex items-center justify-between gap-3 border-t pt-3">
-        <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate" title={authorTitle(movement.user)}>
-            {authorTitle(movement.user)}
-          </span>
-        </p>
-        {movement.photo_url && (
-          <div className="flex shrink-0 items-center gap-2">
-            <AttachmentLink href={movement.photo_url} label="Ricevuta" />
-            <ReceiptThumb src={movement.photo_url} />
+      <footer className="space-y-2 border-t pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate" title={authorTitle(movement.user)}>
+              {authorTitle(movement.user)}
+            </span>
+          </p>
+          {movement.attachments.length > 0 && (
+            <p className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Paperclip className="size-3.5 shrink-0" aria-hidden />
+              {movement.attachments.length === 1 ? "1 ricevuta" : `${movement.attachments.length} ricevute`}
+            </p>
+          )}
+        </div>
+        {movement.attachments.length > 0 && (
+          <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1">
+            {movement.attachments.map((attachment, index) => (
+              <AttachmentThumb key={attachment.id} src={attachment.url} label={`Apri ricevuta ${index + 1}`} />
+            ))}
           </div>
         )}
       </footer>
