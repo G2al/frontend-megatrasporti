@@ -33,7 +33,7 @@ export function BrandLogo({ variant = "color", className, height = 40 }: BrandLo
     <Image
       src={src}
       alt={brand.name}
-      width={height * 4}
+      width={height * brand.logoAspectRatio}
       height={height}
       unoptimized
       priority
