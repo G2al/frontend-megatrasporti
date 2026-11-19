@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, FileText, Layers, PackageMinus, Paperclip, PlusCircle, Warehouse } from "lucide-react";
+import { CalendarClock, FileText, Layers, PackageMinus, Paperclip, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,7 @@ import { VehicleSelectField } from "@/components/shared/vehicle-select-field";
 import { readLastVehicle, saveLastVehicle } from "@/hooks/use-last-vehicle";
 import { apiFetch } from "@/lib/api";
 import { handleSubmitError } from "@/lib/form";
-import { formatMoney, nowInputValue, toInputDateTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { nowInputValue, toInputDateTime } from "@/lib/format";
 import type { Platform, Trip, Vehicle } from "@/types";
 
 const schema = z.object({
@@ -28,7 +27,6 @@ const schema = z.object({
   goods_type_id: z.string().min(1, "Seleziona una dicitura."),
   filiale_id: z.string().min(1, "Seleziona una filiale."),
   vehicle_id: z.string().min(1, "Seleziona una targa."),
-  extra_ids: z.array(z.string()),
   delivery_note_number: z
     .string()
     .min(1, "Inserisci il numero di bordero.")
@@ -87,7 +85,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
       goods_type_id: initialPath.goodsTypeId,
       filiale_id: trip ? String(trip.filiale?.id ?? "") : "",
       vehicle_id: initialVehicle,
-      extra_ids: trip?.extras?.map((extra) => String(extra.id)) ?? [],
       delivery_note_number: trip?.delivery_note_number ?? "",
       scarichi: trip?.scarichi != null ? String(trip.scarichi) : "",
       attachments: [],
@@ -122,7 +119,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     () => filiali.map((filiale) => ({ value: String(filiale.id), label: filiale.name })),
     [filiali],
   );
-  const extras = selectedPlatform?.extras ?? [];
 
   const remainingExisting = useMemo(
     () => (trip?.attachments ?? []).filter((item) => !removedAttachmentIds.includes(item.id)),
@@ -147,7 +143,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     data.append("date", values.date);
     data.append("filiale_id", values.filiale_id);
     data.append("vehicle_id", values.vehicle_id);
-    values.extra_ids.forEach((id) => data.append("extra_ids[]", id));
     data.append("delivery_note_number", values.delivery_note_number);
     data.append("scarichi", values.scarichi || "0");
     values.attachments.forEach((file) => data.append("attachments[]", file));
@@ -191,7 +186,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
                   field.onChange(value);
                   setValue("goods_type_id", "");
                   setValue("filiale_id", "");
-                  setValue("extra_ids", []);
                 }}
                 options={platformOptions}
                 placeholder="Seleziona piattaforma"
@@ -262,54 +256,6 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
             />
           )}
         />
-
-        {extras.length > 0 && (
-          <Field id="extra_ids" label="Extra" icon={PlusCircle}>
-            <Controller
-              control={control}
-              name="extra_ids"
-              render={({ field }) => (
-                <div className="space-y-2">
-                  {extras.map((extra) => {
-                    const checked = field.value.includes(String(extra.id));
-                    return (
-                      <label
-                        key={extra.id}
-                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-base has-data-checked:border-primary has-data-checked:bg-secondary"
-                        data-checked={checked || undefined}
-                      >
-                        <span
-                          className={cn(
-                            "flex size-5 shrink-0 items-center justify-center rounded border",
-                            checked ? "border-primary bg-primary text-primary-foreground" : "border-input",
-                          )}
-                        >
-                          {checked && <Check className="size-3.5" />}
-                        </span>
-                        <input
-                          type="checkbox"
-                          className="sr-only"
-                          checked={checked}
-                          disabled={pending}
-                          onChange={(event) => {
-                            const next = event.target.checked
-                              ? [...field.value, String(extra.id)]
-                              : field.value.filter((id) => id !== String(extra.id));
-                            field.onChange(next);
-                          }}
-                        />
-                        <span className="min-w-0 flex-1">{extra.name}</span>
-                        <span className="shrink-0 text-sm font-medium text-muted-foreground">
-                          {formatMoney(extra.amount)}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            />
-          </Field>
-        )}
       </FormSection>
 
       <FormSection title="Carico e scarichi">

@@ -83,18 +83,11 @@ export interface PlatformGoodsType {
   filiali: Filiale[];
 }
 
-export interface PlatformExtra {
-  id: number;
-  name: string;
-  amount: number | string;
-}
-
 export interface Platform {
   id: number;
   name: string;
   addresses: PlatformAddress[];
   goods_types: PlatformGoodsType[];
-  extras: PlatformExtra[];
 }
 
 export interface Author {
@@ -143,6 +136,11 @@ export interface TripAttachment {
   url: string;
 }
 
+export interface TripExtra {
+  name: string;
+  amount: number | string;
+}
+
 export interface Trip {
   id: number;
   date: string;
@@ -152,7 +150,7 @@ export interface Trip {
   attachments: TripAttachment[];
   is_certified: boolean;
   filiale: Filiale | null;
-  extras?: PlatformExtra[];
+  extras: TripExtra[];
   vehicle: Vehicle | null;
   user: Author | null;
 }
