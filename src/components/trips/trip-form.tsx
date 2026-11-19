@@ -116,7 +116,7 @@ export function TripForm({ vehicles, platforms, trip, onSaved }: TripFormProps) 
     [goodsTypes],
   );
   const filialeOptions = useMemo(
-    () => filiali.map((filiale) => ({ value: String(filiale.id), label: filiale.name })),
+    () => filiali.map((filiale) => ({ value: String(filiale.id), label: filiale.name, keywords: filiale.codice })),
     [filiali],
   );
 
